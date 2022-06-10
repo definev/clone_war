@@ -1,16 +1,7 @@
-# clone_war
+# Clone war
 
-A new Flutter project.
+My flutter implementation for random cool UI/UX in the internet (twitter, dribbble, etc).
 
-## Getting Started
+# Challenges
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+"#1" - [Grid Layout](https://twitter.com/philipcdavis/status/1526583788838408193) from [@philipcdavis](https://twitter.com/philipcdavis)
