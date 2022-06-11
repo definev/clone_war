@@ -3,6 +3,22 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+void main() {
+  runApp(const CloneWar());
+}
+
+class CloneWar extends StatelessWidget {
+  const CloneWar({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      title: 'Clone War',
+      home: GridLayoutChallenge(),
+    );
+  }
+}
+
 class GridLayoutChallenge extends StatefulWidget {
   const GridLayoutChallenge({Key? key}) : super(key: key);
 
@@ -14,10 +30,8 @@ class _GridLayoutChallengeState extends State<GridLayoutChallenge> {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: SafeArea(
-        child: GridLayout(
-          color: Colors.white,
-        ),
+      body: GridLayout(
+        color: Colors.white,
       ),
     );
   }
@@ -97,8 +111,8 @@ class _GridLayoutState extends State<GridLayout> {
         }
 
         final remainSize = Size(
-          (availableSize.width - width * tileSize(shownDepth) + tileSpace) / 2,
-          (availableSize.height - height * tileSize(shownDepth) + tileSpace) / 2,
+          (availableSize.width - width * tileSize(depth) + tileSpace) / 2,
+          (availableSize.height - height * tileSize(depth) + tileSpace) / 2,
         );
 
         final spacingCell = _spaceLevel();
@@ -114,13 +128,12 @@ class _GridLayoutState extends State<GridLayout> {
                       AnimatedPositioned(
                         duration: 500.ms,
                         curve: Curves.easeOutBack,
-                        left: remainSize.width + column * tileSize(shownDepth),
-                        top: remainSize.height + row * tileSize(shownDepth),
+                        left: remainSize.width + column * tileSize(depth),
+                        top: remainSize.height + row * tileSize(depth),
                         child: _gridTile(
                           row + column * height,
                           column: column,
                           row: row,
-                          color: Colors.amber,
                         ),
                       ),
               ],
@@ -134,9 +147,8 @@ class _GridLayoutState extends State<GridLayout> {
               children: [
                 ElevatedButton(
                   onPressed: () => setState(() {
-                    if (depth <= 0 && shownDepth <= 0) return;
+                    if (depth <= 0) return;
                     depth -= 1;
-                    Future.delayed(500.ms, () => setState(() => shownDepth = depth));
                   }),
                   child: const Text('Minus'),
                 ),
@@ -163,31 +175,25 @@ class _GridLayoutState extends State<GridLayout> {
     final column = point.value.x + spacingCell.x ~/ 2;
     final row = point.value.y + spacingCell.y ~/ 2;
     final coordinate = _calculateCoordinate(column, row);
-    final container = AnimatedContainer(
-      key: ValueKey('container : $coordinate'),
-      duration: 500.ms,
-      width: adaptiveSize(shownDepth),
-      height: adaptiveSize(shownDepth),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        color: widget.color,
-      ),
-    );
 
     return AnimatedPositioned(
       duration: 500.ms,
       curve: Curves.easeOutBack,
-      left: remainSize.width + (point.value.x + spacingCell.x ~/ 2) * tileSize(shownDepth),
-      top: remainSize.height + (point.value.y + spacingCell.y ~/ 2) * tileSize(shownDepth),
+      left: remainSize.width + (point.value.x + spacingCell.x ~/ 2) * tileSize(depth),
+      top: remainSize.height + (point.value.y + spacingCell.y ~/ 2) * tileSize(depth),
       child: Animate(
         delay: _getDelay(
-          transitionDelay: depth > 0 ? 400 : 300,
           column: column,
           row: row,
           coordinate: coordinate,
         ),
-        key: ValueKey('center : $coordinate'),
         effects: [
+          // MoveEffect(
+          //   duration: 200.ms,
+          //   begin: Offset.zero,
+          //   end: Offset(-tileSpace * coordinate.x.toDouble(), -tileSpace * coordinate.y.toDouble()),
+          //   curve: Curves.easeOutBack,
+          // ),
           MoveEffect(
             duration: 500.ms,
             begin: Offset(-tileSpace * coordinate.x.toDouble(), -tileSpace * coordinate.y.toDouble()),
@@ -195,7 +201,12 @@ class _GridLayoutState extends State<GridLayout> {
             curve: Curves.easeOutBack,
           ),
         ],
-        child: container,
+        child: _gridTile(
+          point.key,
+          column: point.value.x,
+          row: point.value.y,
+          center: true,
+        ),
       ),
     );
   }
@@ -253,16 +264,18 @@ class _GridLayoutState extends State<GridLayout> {
   double tileSpace = 12;
   double tileSize(int depth) => adaptiveSize(depth) + tileSpace;
 
-  double adaptiveSize(int depth) => normalSize - depth * 16;
+  double adaptiveSize(int depth) => normalSize - depth * 8;
   double normalSize = 56;
 
-  int get height => _calculateHeight(availableSize, tileSize(shownDepth));
-  int get width => _calculateWidth(availableSize, tileSize(shownDepth));
+  int get height => _calculateHeight(availableSize, tileSize(depth));
+  int get width => _calculateWidth(availableSize, tileSize(depth));
   int _calculateHeight(Size size, double tileSize) => (size.height - tileSpace) ~/ tileSize;
   int _calculateWidth(Size size, double tileSize) => (size.width - tileSpace) ~/ tileSize;
 
   int get maxColumn => width % 2 == 0 ? width ~/ 2 - 1 : width ~/ 2;
   int get maxRow => height % 2 == 0 ? height ~/ 2 - 1 : height ~/ 2;
+
+  double transitionDelay = 300;
 
   math.Point<int> calculateCenter(int column, int row) {
     int widthCenter = 0;
@@ -306,11 +319,15 @@ class _GridLayoutState extends State<GridLayout> {
     required int column,
     required int row,
     required math.Point<int> coordinate,
-    int transitionDelay = 300,
   }) {
     double transitionDelayUnit = transitionDelay / (maxColumn + maxRow);
+    final center = calculateCenter(column, row);
 
-    final delay = (coordinate.x.abs() + coordinate.y.abs());
+    var delay = (coordinate.x.abs() + coordinate.y.abs());
+    if (removed) {
+      delay = delay;
+    }
+
     return (delay * transitionDelayUnit).ms;
   }
 }
