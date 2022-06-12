@@ -250,26 +250,23 @@ class _GridLayoutState extends State<GridLayout> {
             curve: Curves.easeOutBack,
             begin: beginTileSize,
             end: endTileSize,
-            builder: (context, value, child) => Opacity(
-              opacity: 0.4,
-              child: Container(
-                width: value,
-                height: value,
-                decoration: BoxDecoration(
-                  image: point.key < Images.all.length
-                      ? DecorationImage(
-                          image: AssetImage(Images.all[point.key]),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
-                  borderRadius: BorderRadius.circular(_adaptiveRadius),
-                  border: Border.all(
-                    color: point.key < Images.all.length ? Colors.white.withOpacity(0) : Colors.white,
-                    width: point.key < Images.all.length ? 0 : 1,
-                  ),
+            builder: (context, value, child) => Container(
+              width: value,
+              height: value,
+              decoration: BoxDecoration(
+                image: point.key < Images.all.length
+                    ? DecorationImage(
+                        image: AssetImage(Images.all[point.key]),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+                borderRadius: BorderRadius.circular(_adaptiveRadius),
+                border: Border.all(
+                  color: point.key < Images.all.length ? Colors.white.withOpacity(0) : Colors.white,
+                  width: point.key < Images.all.length ? 0 : 1,
                 ),
-                child: point.key < Images.all.length ? null : const Center(child: Icon(CupertinoIcons.add)),
               ),
+              child: point.key < Images.all.length ? null : const Center(child: Icon(CupertinoIcons.add)),
             ),
           ),
           MoveEffect(
@@ -419,7 +416,7 @@ class _GridLayoutState extends State<GridLayout> {
                 ),
               ),
               FadeEffect(
-                duration: _lastAction == _Action.decrease ? Animations.medium.ms : Animations.medium.ms,
+                duration: Animations.medium.ms,
                 delay: moveDelay,
                 curve: isLastDepth ? Curves.decelerate : Curves.easeOutBack,
                 begin: () {
@@ -434,7 +431,7 @@ class _GridLayoutState extends State<GridLayout> {
               ),
               if (isLastDepth) ...[
                 MoveEffect(
-                  duration: 900.ms,
+                  duration: Animations.medium.ms,
                   delay: moveDelay,
                   begin: moveBegin,
                   end: moveEnd,
