@@ -1,6 +1,9 @@
 import 'dart:math' as math;
 
+import 'package:clone_war/resources/resources.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 class GridLayoutChallenge extends StatefulWidget {
@@ -36,55 +39,110 @@ class GridLayout extends StatefulWidget {
 }
 
 class _GridLayoutState extends State<GridLayout> {
-  int depth = 0;
-  int shownDepth = 0;
+  int _shownDepth = 0;
+  int _lastShownDepth = 0;
+  int get shownDepth => removed ? _shownDepth - 1 : _shownDepth;
 
-  int initialHeight = 0;
-  int initialWidth = 0;
-
-  int _startColumnIndex() => 0;
-  int _endColumnIndex() => width;
-  int _startRowIndex() => 0;
-  int _endRowIndex() => height;
-
-  bool _isBorder(math.Point<int> spacingCell, int column, int row) {
-    if (initialHeight == height && initialWidth == width) {
-      return false;
-    }
-    if (column < spacingCell.x ~/ 2 || row < spacingCell.y ~/ 2) {
-      return true;
-    }
-
-    int _halfEnd(int end) => end - end ~/ 2;
-
-    if (column >= width - _halfEnd(spacingCell.x) || row >= height - _halfEnd(spacingCell.y)) {
-      return true;
-    }
-
-    return false;
+  double get _adaptiveRadius => 8 - shownDepth * 2;
+  void resetDepth() {
+    sizes = [math.Point(width, height)];
+    _shownDepth = 0;
+    removed = false;
+    _borderPoints = [];
+    _calculatePoints();
   }
+
+  void decreaseDepth() {
+    if (shownDepth <= 0) return;
+    setState(() {
+      _lastShownDepth = _shownDepth;
+      _markAsRemoved();
+      Future.delayed((200 * timeDilation).ms, () {
+        _markAsRemovedDone();
+        setState(() {});
+        Future.delayed((400 * timeDilation).ms, () {
+          sizes.removeLast();
+          _calculateBorderPoints();
+          setState(() {});
+        });
+      });
+    });
+  }
+
+  void increaseDepth() {
+    setState(() {
+      _lastShownDepth = _shownDepth;
+      _shownDepth += 1;
+      sizes.add(math.Point(width, height));
+      _calculateBorderPoints();
+    });
+  }
+
+  int widthAt(int depth) => sizes[depth].x;
+  int heightAt(int depth) => sizes[depth].y;
+
+  // The spacing of the grid by depth
+  List<math.Point<int>> sizes = [const math.Point(0, 0)];
 
   List<math.Point<int>> _points = [];
   void _calculatePoints() {
     _points = [];
-    initialHeight = height;
-    initialWidth = width;
-    depth = 0;
-    for (int column = _startColumnIndex(); column < _endColumnIndex(); column++) {
-      for (int row = _startRowIndex(); row < _endRowIndex(); row++) {
+
+    for (int column = 0; column < width; column++) {
+      for (int row = 0; row < height; row++) {
         _points.add(math.Point(column, row));
       }
     }
   }
 
-  math.Point<int> _spaceLevel() {
-    final differHeight = height - initialHeight;
-    final differWidth = width - initialWidth;
+  List<List<math.Point<int>>> _borderPoints = [];
+  // Spacing + (Size of depth - size of previous depth)
+  List<math.Point<int>> _getBorderPointsAtDepth(int depth) {
+    Set<math.Point<int>> points = {};
 
-    return math.Point(
-      math.max(differWidth, 0),
-      math.max(differHeight, 0),
-    );
+    final spacing = _spaceBetweenLevel(_shownDepth, depth);
+    final size = sizes[depth];
+    final prevSize = sizes[depth - 1];
+    final sizeSpacing = _spaceBetweenLevel(depth, depth - 1);
+
+    final leftBound = sizeSpacing.x ~/ 2;
+    final rightBound = sizeSpacing.x ~/ 2 + prevSize.x;
+    final topBound = sizeSpacing.y ~/ 2;
+    final bottomBound = sizeSpacing.y ~/ 2 + prevSize.y;
+
+    for (int column = 0; column < size.x; column++) {
+      for (int row = 0; row < topBound; row++) {
+        points.add(math.Point(column, row));
+      }
+      for (int row = bottomBound; row < size.y; row++) {
+        points.add(math.Point(column, row));
+      }
+    }
+
+    for (int row = 0; row < size.y; row++) {
+      for (int column = 0; column < leftBound; column++) {
+        points.add(math.Point(column, row));
+      }
+      for (int column = rightBound; column < size.x; column++) {
+        points.add(math.Point(column, row));
+      }
+    }
+
+    return points.map((e) => math.Point(e.x + spacing.x ~/ 2, e.y + spacing.y ~/ 2)).toList();
+  }
+
+  void _calculateBorderPoints() {
+    _borderPoints = [];
+    for (int depth = 1; depth <= shownDepth; depth += 1) {
+      final points = _getBorderPointsAtDepth(depth);
+      _borderPoints.add(points);
+    }
+  }
+
+  math.Point<int> _spaceBetweenLevel(int currDepth, int depth) {
+    final differHeight = heightAt(currDepth) - heightAt(depth);
+    final differWidth = widthAt(currDepth) - widthAt(depth);
+    return math.Point(math.max(differWidth, 0), math.max(differHeight, 0));
   }
 
   @override
@@ -93,58 +151,27 @@ class _GridLayoutState extends State<GridLayout> {
       builder: (context, constraints) {
         if (availableSize != constraints.biggest || availableSize == Size.zero) {
           availableSize = constraints.biggest;
-          _calculatePoints();
+          resetDepth();
         }
 
         final remainSize = Size(
-          (availableSize.width - width * tileSize(shownDepth) + tileSpace) / 2,
-          (availableSize.height - height * tileSize(shownDepth) + tileSpace) / 2,
+          (availableSize.width - width * tileSize(shownDepth) + spacingTile(shownDepth)) / 2,
+          (availableSize.height - height * tileSize(shownDepth) + spacingTile(shownDepth)) / 2,
         );
-
-        final spacingCell = _spaceLevel();
 
         return Stack(
           children: [
-            Stack(
-              key: ValueKey(depth),
-              children: [
-                for (int column = 0; column < width; column++)
-                  for (int row = 0; row < height; row++)
-                    if (_isBorder(spacingCell, column, row))
-                      AnimatedPositioned(
-                        duration: 500.ms,
-                        curve: Curves.easeOutBack,
-                        left: remainSize.width + column * tileSize(shownDepth),
-                        top: remainSize.height + row * tileSize(shownDepth),
-                        child: _gridTile(
-                          row + column * height,
-                          column: column,
-                          row: row,
-                          color: Colors.amber,
-                        ),
-                      ),
-              ],
-            ),
-            Stack(
-              children: [
-                for (final point in _points.asMap().entries) _centerTile(point, remainSize, spacingCell),
-              ],
-            ),
+            for (final points in _borderPoints.asMap().entries) //
+              _borderTileStack(points, remainSize),
+            _centerTileStack(remainSize),
             Row(
               children: [
                 ElevatedButton(
-                  onPressed: () => setState(() {
-                    if (depth <= 0 && shownDepth <= 0) return;
-                    depth -= 1;
-                    Future.delayed(500.ms, () => setState(() => shownDepth = depth));
-                  }),
+                  onPressed: decreaseDepth,
                   child: const Text('Minus'),
                 ),
                 ElevatedButton(
-                  onPressed: () => setState(() {
-                    shownDepth += 1;
-                    depth += 1;
-                  }),
+                  onPressed: increaseDepth,
                   child: const Text('Add'),
                 ),
               ],
@@ -155,111 +182,171 @@ class _GridLayoutState extends State<GridLayout> {
     );
   }
 
-  Widget _centerTile(
-    MapEntry<int, math.Point<int>> point,
-    Size remainSize,
-    math.Point<int> spacingCell,
-  ) {
+  Widget _centerTileStack(Size remainSize) {
+    return Stack(
+      key: const ValueKey('center-tile-stack'),
+      children: [
+        for (final point in _points.asMap().entries) _centerTile(point, remainSize),
+      ],
+    );
+  }
+
+  Widget _centerTile(MapEntry<int, math.Point<int>> point, Size remainSize) {
+    final spacingCell = _spaceBetweenLevel(shownDepth, 0);
     final column = point.value.x + spacingCell.x ~/ 2;
     final row = point.value.y + spacingCell.y ~/ 2;
     final coordinate = _calculateCoordinate(column, row);
-    final container = AnimatedContainer(
-      key: ValueKey('container : $coordinate'),
-      duration: 500.ms,
-      width: adaptiveSize(shownDepth),
-      height: adaptiveSize(shownDepth),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        color: widget.color,
-      ),
-    );
+    final lastShownDepth = _shownDepth;
+    final beginDepth = _lastShownDepth;
+    final endDepth = shownDepth;
+    final transitionPosition = _transitionPosition(coordinate, endDepth);
+
+    bool shouldRepaint() {
+      return removed || _shownDepth != lastShownDepth;
+    }
 
     return AnimatedPositioned(
-      duration: 500.ms,
+      duration: 400.ms,
       curve: Curves.easeOutBack,
-      left: remainSize.width + (point.value.x + spacingCell.x ~/ 2) * tileSize(shownDepth),
-      top: remainSize.height + (point.value.y + spacingCell.y ~/ 2) * tileSize(shownDepth),
+      left: remainSize.width + column * tileSize(endDepth),
+      top: remainSize.height + row * tileSize(endDepth),
       child: Animate(
-        delay: _getDelay(
-          transitionDelay: depth > 0 ? 400 : 300,
-          column: column,
-          row: row,
-          coordinate: coordinate,
-        ),
-        key: ValueKey('center : $coordinate'),
+        key: ValueKey('center : $coordinate | $availableSize | ${shouldRepaint()}'),
         effects: [
-          MoveEffect(
+          CustomEffect(
             duration: 500.ms,
-            begin: Offset(-tileSpace * coordinate.x.toDouble(), -tileSpace * coordinate.y.toDouble()),
-            end: Offset.zero,
+            curve: beginDepth == endDepth ? Curves.linear : Curves.easeOutBack,
+            begin: adaptiveSize(beginDepth),
+            end: adaptiveSize(endDepth),
+            builder: (context, value, child) => SizedBox(
+              height: adaptiveSize(endDepth),
+              width: adaptiveSize(endDepth),
+              child: Center(
+                child: Container(
+                  width: value,
+                  height: value,
+                  decoration: BoxDecoration(
+                    image: point.key < Images.all.length
+                        ? DecorationImage(
+                            image: AssetImage(Images.all[point.key]),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                    borderRadius: BorderRadius.circular(_adaptiveRadius),
+                    border: Border.all(
+                      color: point.key < Images.all.length ? Colors.white.withOpacity(0) : Colors.white,
+                      width: point.key < Images.all.length ? 0 : 1,
+                    ),
+                  ),
+                  child: point.key < Images.all.length ? null : const Center(child: Icon(CupertinoIcons.add)),
+                ),
+              ),
+            ),
+          ),
+          const ThenEffect(),
+          MoveEffect(
+            delay: _getDelay(
+              coordinate: coordinate,
+              transitionDelay: removed ? 100 : 300,
+            ),
+            duration: removed ? 500.ms : 300.ms,
+            begin: removed ? Offset.zero : transitionPosition,
+            end: removed ? transitionPosition : Offset.zero,
             curve: Curves.easeOutBack,
           ),
         ],
-        child: container,
       ),
     );
   }
 
-  // TODO: Change approach to List of Point for stable the state of widget
-  Widget _gridTile(
-    int index, {
-    required int column,
-    required int row,
-    Color? color,
-    bool center = false,
-  }) {
-    final coordinate = _calculateCoordinate(column, row);
+  Widget _borderTileStack(MapEntry<int, List<math.Point<int>>> points, Size remainSize) {
+    return Stack(
+      key: ValueKey('border-tile-stack : ${points.key} | ${points.key == _shownDepth ? removed : false}'),
+      children: _borderTile(points, remainSize),
+    );
+  }
 
-    return Animate(
-      delay: _getDelay(
-        column: column,
-        row: row,
-        coordinate: coordinate,
-      ),
-      effects: center
-          ? []
-          : [
-              MoveEffect(
+  List<Widget> _borderTile(MapEntry<int, List<math.Point<int>>> points, Size remainSize) {
+    final list = <Widget>[];
+
+    for (final pointEntry in points.value.asMap().entries) {
+      final coordinate = _calculateCoordinate(pointEntry.value.x, pointEntry.value.y);
+      final imagePosition = pointEntry.key + _points.length;
+      final delay = _getDelay(coordinate: coordinate, removed: removed);
+
+      list.add(
+        AnimatedPositioned(
+          duration: 400.ms,
+          curve: Curves.easeOutBack,
+          left: remainSize.width + pointEntry.value.x * tileSize(removed ? _shownDepth : shownDepth),
+          top: remainSize.height + pointEntry.value.y * tileSize(removed ? _shownDepth : shownDepth),
+          child: Animate(
+            key: ValueKey('border ${points.key}: $coordinate | $_shownDepth | $removed'),
+            effects: [
+              CustomEffect(
                 duration: 500.ms,
-                begin: removed
-                    ? Offset.zero
-                    : Offset(-tileSpace * coordinate.x.toDouble(), -tileSpace * coordinate.y.toDouble()),
-                end: removed
-                    ? Offset(-tileSpace * coordinate.x.toDouble(), -tileSpace * coordinate.y.toDouble())
-                    : Offset.zero,
                 curve: Curves.easeOutBack,
+                begin: adaptiveSize(removed ? _shownDepth : _shownDepth - 1),
+                end: adaptiveSize(removed ? _shownDepth : shownDepth),
+                builder: (context, value, child) => Container(
+                  width: value,
+                  height: value,
+                  decoration: BoxDecoration(
+                    image: imagePosition < Images.all.length
+                        ? DecorationImage(
+                            image: AssetImage(Images.all[imagePosition]),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                    borderRadius: BorderRadius.circular(_adaptiveRadius),
+                    border: Border.all(
+                      color: imagePosition < Images.all.length ? Colors.white.withOpacity(0) : Colors.white,
+                      width: imagePosition < Images.all.length ? 0 : 1,
+                    ),
+                  ),
+                  child: imagePosition < Images.all.length ? null : const Center(child: Icon(CupertinoIcons.add)),
+                ),
               ),
               FadeEffect(
+                duration: 500.ms,
+                delay: delay,
+                curve: Curves.easeOutBack,
                 begin: removed ? 1 : 0,
                 end: removed ? 0 : 1,
+              ),
+              MoveEffect(
+                duration: 300.ms,
+                delay: delay,
+                begin: removed ? Offset.zero : _transitionPosition(coordinate, removed ? _shownDepth : shownDepth),
+                end: removed ? _transitionPosition(coordinate, removed ? shownDepth : _shownDepth) : Offset.zero,
                 curve: Curves.easeOutBack,
               ),
             ],
-      child: AnimatedContainer(
-        duration: 500.ms,
-        width: adaptiveSize(depth),
-        height: adaptiveSize(depth),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color: color ?? widget.color,
+          ),
         ),
-      ),
-    );
+      );
+    }
+
+    return list;
   }
 
-  late bool removed = false;
+  bool removed = false;
+  void _markAsRemoved() => removed = true;
+  void _markAsRemovedDone() {
+    _shownDepth -= 1;
+    removed = false;
+  }
 
   Size availableSize = Size.zero;
-  double tileSpace = 12;
-  double tileSize(int depth) => adaptiveSize(depth) + tileSpace;
+  double spacingTile(int depth) => 12 - depth * 2;
+  double tileSize(int depth) => adaptiveSize(depth) + spacingTile(depth);
 
   double adaptiveSize(int depth) => normalSize - depth * 16;
   double normalSize = 56;
 
-  int get height => _calculateHeight(availableSize, tileSize(shownDepth));
-  int get width => _calculateWidth(availableSize, tileSize(shownDepth));
-  int _calculateHeight(Size size, double tileSize) => (size.height - tileSpace) ~/ tileSize;
-  int _calculateWidth(Size size, double tileSize) => (size.width - tileSpace) ~/ tileSize;
+  int get height => _calculateDimension(availableSize.height, shownDepth);
+  int get width => _calculateDimension(availableSize.width, shownDepth);
+  int _calculateDimension(double base, int depth) => (base - spacingTile(depth)) ~/ tileSize(depth);
 
   int get maxColumn => width % 2 == 0 ? width ~/ 2 - 1 : width ~/ 2;
   int get maxRow => height % 2 == 0 ? height ~/ 2 - 1 : height ~/ 2;
@@ -303,14 +390,23 @@ class _GridLayoutState extends State<GridLayout> {
   }
 
   Duration _getDelay({
-    required int column,
-    required int row,
     required math.Point<int> coordinate,
     int transitionDelay = 300,
+    bool removed = false,
   }) {
     double transitionDelayUnit = transitionDelay / (maxColumn + maxRow);
 
-    final delay = (coordinate.x.abs() + coordinate.y.abs());
+    var delay = (coordinate.x.abs() + coordinate.y.abs());
+    if (removed) {
+      delay = ((maxColumn + maxRow) - delay).abs();
+    }
     return (delay * transitionDelayUnit).ms;
+  }
+
+  Offset _transitionPosition(math.Point<int> coordinate, int shownDepth) {
+    return Offset(
+      -spacingTile(shownDepth) * coordinate.x.toDouble(),
+      -spacingTile(shownDepth) * coordinate.y.toDouble(),
+    );
   }
 }
