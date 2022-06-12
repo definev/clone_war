@@ -6,7 +6,7 @@ class Images {
   static const String passwordPasswordManager20181229 = 'assets/1password-password-manager-2018-12-29.png';
   static const String passwordPasswordManager20200706 = 'assets/1password-password-manager-2020-07-06.png';
   static const String dScannerApp20210422 = 'assets/3d-scanner-app-2021-04-22.png';
-  static const String BallPool20210805 = 'assets/8-ball-pool-2021-08-05.png';
+  static const String ballPool20210805 = 'assets/8-ball-pool-2021-08-05.png';
   static const String achooHtmlViewerInspector20211007 = 'assets/achoo-html-viewer-inspector-2021-10-07.png';
   static const String agentIntercept20220608 = 'assets/agent-intercept-2022-06-08.png';
   static const String agora220201117 = 'assets/agora-2-2020-11-17.png';
@@ -405,7 +405,7 @@ class Images {
     passwordPasswordManager20181229,
     passwordPasswordManager20200706,
     dScannerApp20210422,
-    BallPool20210805,
+    ballPool20210805,
     achooHtmlViewerInspector20211007,
     agentIntercept20220608,
     agora220201117,
