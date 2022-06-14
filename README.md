@@ -4,4 +4,4 @@ My flutter implementation for random cool UI/UX in the internet (twitter, dribbb
 
 # Challenges
 
-"#1" - [Grid Layout](https://twitter.com/philipcdavis/status/1526583788838408193) from [@philipcdavis](https://twitter.com/philipcdavis)
+"#1" - [Grid Layout](https://twitter.com/philipcdavis/status/1526583788838408193) by [@philipcdavis](https://twitter.com/philipcdavis)
