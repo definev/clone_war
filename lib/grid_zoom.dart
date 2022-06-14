@@ -20,9 +20,9 @@ class _GridLayoutChallengeState extends State<GridLayoutChallenge> {
   double _getScale() {
     switch (_prepareAcion) {
       case _Action.decrease:
-        return 1.1;
+        return 1.05;
       case _Action.increase:
-        return 0.9;
+        return 0.95;
       default:
         return 1;
     }
@@ -66,7 +66,7 @@ class _GridLayoutChallengeState extends State<GridLayoutChallenge> {
                   setState(() {});
                 },
                 child: TweenAnimationBuilder<double>(
-                  duration: Animations.short.ms,
+                  duration: Animations.slow.ms,
                   curve: Curves.easeOutBack,
                   tween: Tween<double>(begin: 0, end: _getScale()),
                   builder: (context, value, child) => Transform.scale(
@@ -76,22 +76,6 @@ class _GridLayoutChallengeState extends State<GridLayoutChallenge> {
                   child: GridLayout(key: _gridState),
                 ),
               ),
-            ),
-            Row(
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    _gridState.currentState?.increaseDepth();
-                  },
-                  child: const Icon(Icons.add),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    _gridState.currentState?.decreaseDepth();
-                  },
-                  child: const Icon(Icons.remove),
-                ),
-              ],
             ),
           ],
         ),
@@ -138,17 +122,16 @@ class GridLayoutState extends State<GridLayout> {
 
   void decreaseDepth() {
     if (_shownDepth <= 0 || _lastAction != _Action.none) return;
-    setState(() {
-      _lastAction = _Action.decrease;
-      _shownDepth -= 1;
-      final lastSize = _borderPoints.removeLast();
-      _calculateBorderPoints();
-      _borderPoints.add(lastSize);
-    });
+    _lastAction = _Action.decrease;
+    _shownDepth -= 1;
+    final lastSize = _borderPoints.removeLast();
+    _calculateBorderPoints();
+    _borderPoints.add(lastSize);
+    setState(() {});
   }
 
   void increaseDepth() {
-    if (_lastAction != _Action.none || _shownDepth > 3) return;
+    if (_lastAction != _Action.none || _shownDepth >= 2) return;
     setState(() {
       _lastAction = _Action.increase;
       _shownDepth += 1;
@@ -291,23 +274,25 @@ class GridLayoutState extends State<GridLayout> {
       children: [
         for (final point in _points.asMap().entries)
           _centerTile(
-            point,
-            remainSize,
-            spacingCell,
+            point: point,
+            remainSize: remainSize,
+            spacingCell: spacingCell,
+            imageIndex: point.key,
           ),
       ],
     );
   }
 
-  Widget _centerTile(
-    MapEntry<int, math.Point<int>> point,
-    Size remainSize,
-    math.Point<int> spacingCell,
-  ) {
+  Widget _centerTile({
+    required MapEntry<int, math.Point<int>> point,
+    required math.Point<int> spacingCell,
+    required Size remainSize,
+    required int imageIndex,
+  }) {
     final beginDepth = () {
       switch (_lastAction) {
         case _Action.decrease:
-          return _shownDepth;
+          return _shownDepth + 1;
         case _Action.increase:
           return _shownDepth - 1;
         case _Action.none:
@@ -325,16 +310,7 @@ class GridLayoutState extends State<GridLayout> {
       if (_lastAction == _Action.decrease) return null;
       return _getDelay(coordinate: coordinate, depth: endDepth);
     }();
-    final moveBegin = () {
-      switch (_lastAction) {
-        case _Action.decrease:
-          return Offset.zero;
-        case _Action.increase:
-          return Offset.zero;
-        case _Action.none:
-          return Offset.zero;
-      }
-    }();
+    const moveBegin = Offset.zero;
     final moveEnd = () {
       switch (_lastAction) {
         case _Action.decrease:
@@ -353,7 +329,7 @@ class GridLayoutState extends State<GridLayout> {
     final endTileSize = _adaptiveSize(endDepth);
 
     return AnimatedPositioned(
-      duration: Animations.medium.ms,
+      duration: _lastAction == _Action.decrease ? Animations.slow.ms : Animations.medium.ms,
       curve: Curves.easeOutBack,
       left: remainSize.width + column * tileSize,
       top: remainSize.height + row * tileSize,
@@ -361,7 +337,7 @@ class GridLayoutState extends State<GridLayout> {
         key: ValueKey('center : ${point.key} ${point.value} | $_shownDepth'),
         effects: [
           CustomEffect(
-            duration: _lastAction == _Action.decrease ? Animations.short.ms : Animations.medium.ms,
+            duration: _lastAction == _Action.decrease ? Animations.slow.ms : Animations.medium.ms,
             curve: Curves.easeOutBack,
             begin: beginTileSize,
             end: endTileSize,
@@ -391,17 +367,17 @@ class GridLayoutState extends State<GridLayout> {
                   decoration: BoxDecoration(
                     image: point.key < Images.all.length
                         ? DecorationImage(
-                            image: AssetImage(Images.all[point.key]),
+                            image: AssetImage(Images.all[imageIndex]),
                             fit: BoxFit.cover,
                           )
                         : null,
                     borderRadius: BorderRadius.circular(_adaptiveRadius),
                     border: Border.all(
-                      color: point.key < Images.all.length ? Colors.white.withOpacity(0) : Colors.white,
-                      width: point.key < Images.all.length ? 0 : 1,
+                      color: imageIndex < Images.all.length ? Colors.white.withOpacity(0) : Colors.white,
+                      width: imageIndex < Images.all.length ? 0 : 1,
                     ),
                   ),
-                  child: point.key < Images.all.length
+                  child: imageIndex < Images.all.length
                       ? null
                       : const FittedBox(
                           child: Center(
@@ -414,14 +390,14 @@ class GridLayoutState extends State<GridLayout> {
           ),
           MoveEffect(
             delay: moveDelay,
-            duration: Animations.short.ms,
+            duration: Animations.medium.ms,
             begin: moveBegin,
             end: moveEnd,
             curve: Curves.easeOutBack,
           ),
           const ThenEffect(),
           MoveEffect(
-            duration: Animations.short.ms,
+            duration: Animations.medium.ms,
             begin: Offset.zero,
             end: -moveEnd,
             curve: Curves.easeOutBack,
@@ -443,14 +419,8 @@ class GridLayoutState extends State<GridLayout> {
     final isLastDepth = points.key == _shownDepth && _lastAction == _Action.decrease;
 
     final endDepth = () {
-      switch (_lastAction) {
-        case _Action.decrease:
-          return isLastDepth ? _shownDepth + 1 : _shownDepth;
-        case _Action.increase:
-          return _shownDepth;
-        case _Action.none:
-          return _shownDepth;
-      }
+      if (isLastDepth) return _shownDepth + 1;
+      return _shownDepth;
     }();
     final remainSize = Size(
       (availableSize.width - getWidth(endDepth) * _tileSize(endDepth) + _spacingTile(endDepth)) / 2,
@@ -476,31 +446,30 @@ class GridLayoutState extends State<GridLayout> {
   List<Widget> _borderTile(MapEntry<int, List<math.Point<int>>> points, Size remainSize) {
     final list = <Widget>[];
     final isLastDepth = points.key == _shownDepth && _lastAction == _Action.decrease;
-    final isCenter = _lastAction == _Action.increase && points.key < _shownDepth - 1;
+    final isCenter = (_lastAction == _Action.increase && points.key == _shownDepth - 1) || _lastAction == _Action.none
+        ? false
+        : !isLastDepth && points.key < _shownDepth;
 
     final beginDepth = () {
-      if (isCenter) return _shownDepth - 1;
-
-      switch (_lastAction) {
-        case _Action.decrease:
-          return isLastDepth ? _shownDepth + 1 : _shownDepth;
-        case _Action.increase:
-          return _shownDepth;
-        case _Action.none:
-          return _shownDepth;
+      if (isCenter) {
+        switch (_lastAction) {
+          case _Action.decrease:
+            return _shownDepth + 1;
+          case _Action.increase:
+            return _shownDepth - 1;
+          case _Action.none:
+            return _shownDepth;
+        }
       }
+      if (isLastDepth) return _shownDepth + 1;
+
+      return _shownDepth;
     }();
     final endDepth = () {
       if (isCenter) return _shownDepth;
+      if (isLastDepth) return _shownDepth + 1;
 
-      switch (_lastAction) {
-        case _Action.decrease:
-          return isLastDepth ? _shownDepth + 1 : _shownDepth;
-        case _Action.increase:
-          return _shownDepth;
-        case _Action.none:
-          return _shownDepth;
-      }
+      return _shownDepth;
     }();
 
     final beginTileSize = _adaptiveSize(beginDepth);
@@ -511,22 +480,21 @@ class GridLayoutState extends State<GridLayout> {
     final usedImage = _calculateUsedImage(points);
 
     for (final pointEntry in points.value.asMap().entries) {
-      final imagePosition = pointEntry.key + usedImage;
+      final imageIndex = pointEntry.key + usedImage;
 
       final coordinate = _calculateCoordinate(pointEntry.value.x, pointEntry.value.y, endDepth);
 
-      final moveDelay = isLastDepth ? null : _getDelay(coordinate: coordinate, depth: endDepth);
-      final transitionPosition = isCenter
-          ? Offset(
-              6 / 5 * coordinate.x.toDouble(),
-              6 / 5 * coordinate.y.toDouble(),
-            )
-          : _transitionPosition(
-              coordinate,
-              _shownDepth,
-              additionX: isLastDepth ? -remainSize.width / 2 : 0,
-              additionY: isLastDepth ? -remainSize.height / 2 : 0,
-            );
+      final moveDelay = () {
+        if (isCenter) {
+          if (_lastAction == _Action.decrease) return null;
+          return _getDelay(coordinate: coordinate, depth: endDepth);
+        }
+        if (isLastDepth) {
+          return (Animations.short - _getDelay(coordinate: coordinate, depth: endDepth).inMilliseconds).abs().ms;
+        }
+        return _getDelay(coordinate: coordinate, depth: endDepth);
+      }();
+      final transitionPosition = _transitionPosition(coordinate, _shownDepth);
       final moveBegin = () {
         if (isCenter) return Offset.zero;
 
@@ -540,14 +508,27 @@ class GridLayoutState extends State<GridLayout> {
         }
       }();
       final moveEnd = () {
-        if (isCenter) return transitionPosition * 0.2;
+        if (isCenter) {
+          switch (_lastAction) {
+            case _Action.decrease:
+              return Offset.zero;
+            case _Action.increase:
+              return Offset(
+                6 / 5 * coordinate.x.toDouble(),
+                6 / 5 * coordinate.y.toDouble(),
+              );
+            case _Action.none:
+              return Offset.zero;
+          }
+        }
+        if (isLastDepth) return transitionPosition;
 
-        return isLastDepth ? transitionPosition : Offset.zero;
+        return Offset.zero;
       }();
 
       list.add(
         AnimatedPositioned(
-          duration: Animations.medium.ms,
+          duration: isCenter ? Animations.slow.ms : Animations.medium.ms,
           curve: Curves.easeOutBack,
           left: remainSize.width + pointEntry.value.x * tileSize,
           top: remainSize.height + pointEntry.value.y * tileSize,
@@ -555,7 +536,7 @@ class GridLayoutState extends State<GridLayout> {
             key: ValueKey('point : ${pointEntry.key} | depth : ${points.key} | $isCenter'),
             effects: [
               CustomEffect(
-                duration: Animations.medium.ms,
+                duration: isCenter ? Animations.slow.ms : Animations.medium.ms,
                 curve: Curves.easeOutBack,
                 begin: beginTileSize,
                 end: endTileSize,
@@ -583,19 +564,19 @@ class GridLayoutState extends State<GridLayout> {
                       width: value,
                       height: value,
                       decoration: BoxDecoration(
-                        image: imagePosition < Images.all.length
+                        image: imageIndex < Images.all.length
                             ? DecorationImage(
-                                image: AssetImage(Images.all[imagePosition]),
+                                image: AssetImage(Images.all[imageIndex]),
                                 fit: BoxFit.cover,
                               )
                             : null,
                         borderRadius: BorderRadius.circular(_adaptiveRadius),
                         border: Border.all(
-                          color: imagePosition < Images.all.length ? Colors.white.withOpacity(0) : Colors.white,
-                          width: imagePosition < Images.all.length ? 0 : 1,
+                          color: imageIndex < Images.all.length ? Colors.white.withOpacity(0) : Colors.white,
+                          width: imageIndex < Images.all.length ? 0 : 1,
                         ),
                       ),
-                      child: imagePosition < Images.all.length
+                      child: imageIndex < Images.all.length
                           ? null
                           : const FittedBox(
                               child: Center(
@@ -606,27 +587,26 @@ class GridLayoutState extends State<GridLayout> {
                   ),
                 ),
               ),
-              FadeEffect(
-                duration: Animations.medium.ms,
-                delay: isCenter ? null : moveDelay,
-                curve: Curves.decelerate,
-                begin: () {
-                  if (isCenter) return 1.0;
-                  switch (_lastAction) {
-                    case _Action.decrease:
-                      return 1.0;
-                    case _Action.increase:
-                      return 0.0;
-                    case _Action.none:
-                      return 1.0;
-                  }
-                }(),
-                end: isCenter
-                    ? 1.0
-                    : isLastDepth
-                        ? 0.04
-                        : 1.0,
-              ),
+              if (!isCenter)
+                FadeEffect(
+                  duration: isLastDepth ? Animations.short.ms : Animations.medium.ms,
+                  delay: isCenter ? null : moveDelay,
+                  curve: Curves.decelerate,
+                  begin: () {
+                    switch (_lastAction) {
+                      case _Action.decrease:
+                        return 1.0;
+                      case _Action.increase:
+                        return 0.0;
+                      case _Action.none:
+                        return 1.0;
+                    }
+                  }(),
+                  end: () {
+                    if (isLastDepth) return 0.0;
+                    return 1.0;
+                  }(),
+                ),
               if (isCenter) ...[
                 MoveEffect(
                   delay: moveDelay,
@@ -654,11 +634,16 @@ class GridLayoutState extends State<GridLayout> {
                 CallbackEffect(
                   callback: () {
                     if (isLastDepth) {
-                      _lastAction = _Action.none;
-                      if (sizes.length - 1 > _shownDepth) {
-                        _calculateBorderPoints();
-                      }
-                      setState(() {});
+                      Future.delayed(
+                        Animations.short.ms,
+                        () {
+                          _lastAction = _Action.none;
+                          if (sizes.length - 1 > _shownDepth) {
+                            _calculateBorderPoints();
+                          }
+                          setState(() {});
+                        },
+                      );
                     }
                   },
                 )
@@ -688,10 +673,20 @@ class GridLayoutState extends State<GridLayout> {
   }
 
   Size availableSize = Size.zero;
-  double _spacingTile(int depth) => 12;
+  double _spacingTile(int depth) => depth == 0
+      ? 22
+      : depth == 1
+          ? 16
+          : 12;
   double _tileSize(int depth) => _adaptiveSize(depth) + _spacingTile(depth);
 
-  double _adaptiveSize(int depth) => _baseSize - depth * 16;
+  double _adaptiveSize(int depth) =>
+      _baseSize -
+      (depth == 0
+          ? 0
+          : depth == 1
+              ? 16
+              : 22);
   final double _baseSize = 56;
   final double _adaptiveRadius = 8;
 
