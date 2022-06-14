@@ -118,13 +118,13 @@ class GridLayoutState extends State<GridLayout> {
   math.Point<int>? _magnifierPoints;
   double _evaluateScaleByMagnifierPoint(math.Point<int> point) {
     if (_magnifierPoints == null) return 1.0;
-    if (point == _magnifierPoints) return 1.1;
+    if (point == _magnifierPoints) return 1.2;
 
     final magnifierPoints = _magnifierPoints!;
-    if ((point.x - magnifierPoints.x).abs() == 1 && point.y - magnifierPoints.y == 0) return 0.85;
-    if (point.x - magnifierPoints.x == 0 && (point.y - magnifierPoints.y).abs() == 1) return 0.85;
-    if ((point.x - magnifierPoints.x).abs() == 1 && (point.y - magnifierPoints.y).abs() == 1) return 0.7;
-    return 1.0;
+    if ((point.x - magnifierPoints.x).abs() == 1 && point.y - magnifierPoints.y == 0) return 1.1;
+    if (point.x - magnifierPoints.x == 0 && (point.y - magnifierPoints.y).abs() == 1) return 1.1;
+    if ((point.x - magnifierPoints.x).abs() == 1 && (point.y - magnifierPoints.y).abs() == 1) return 0.95;
+    return 0.85;
   }
 
   void resetDepth() {
@@ -378,7 +378,7 @@ class GridLayoutState extends State<GridLayout> {
                 },
               ),
               child: TweenAnimationBuilder<double>(
-                duration: Animations.short.ms,
+                duration: Animations.slow.ms,
                 tween: Tween<double>(begin: 1.0, end: _evaluateScaleByMagnifierPoint(math.Point(column, row))),
                 curve: Curves.easeOutBack,
                 builder: (context, value, child) => Transform.scale(
@@ -572,7 +572,7 @@ class GridLayoutState extends State<GridLayout> {
                     },
                   ),
                   child: TweenAnimationBuilder<double>(
-                    duration: Animations.short.ms,
+                    duration: Animations.slow.ms,
                     tween: Tween<double>(begin: 1.0, end: _evaluateScaleByMagnifierPoint(pointEntry.value)),
                     curve: Curves.easeOutBack,
                     builder: (context, value, child) => Transform.scale(
@@ -773,6 +773,7 @@ class GridLayoutState extends State<GridLayout> {
 }
 
 class Animations {
+  static const slow = 800;
   static const medium = 500;
   static const short = 300;
 }
