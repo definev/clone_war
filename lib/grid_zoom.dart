@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:clone_war/resources/resources.dart';
+import 'package:clone_war/touch_hover_region.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -31,47 +32,68 @@ class _GridLayoutChallengeState extends State<GridLayoutChallenge> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: GestureDetector(
-          onScaleStart: (details) {},
-          onScaleUpdate: (details) {
-            _Action action = _Action.values[_prepareAcion.index];
-            if (details.scale < 0.95) {
-              action = _Action.increase;
-            } else if (details.scale > 1.05) {
-              action = _Action.decrease;
-            } else {
-              action = _Action.none;
-            }
+        child: Column(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onScaleUpdate: (details) {
+                  _Action action = _Action.values[_prepareAcion.index];
+                  if (details.scale < 0.95) {
+                    action = _Action.increase;
+                  } else if (details.scale > 1.05) {
+                    action = _Action.decrease;
+                  } else {
+                    action = _Action.none;
+                  }
 
-            if (action != _prepareAcion) {
-              _prepareAcion = action;
-              setState(() {});
-            }
-          },
-          onScaleEnd: (_) {
-            switch (_prepareAcion) {
-              case _Action.increase:
-                _gridState.currentState?.increaseDepth();
-                break;
-              case _Action.decrease:
-                _gridState.currentState?.decreaseDepth();
-                break;
-              default:
-                return;
-            }
-            _prepareAcion = _Action.none;
-            setState(() {});
-          },
-          child: TweenAnimationBuilder<double>(
-            duration: Animations.short.ms,
-            curve: Curves.easeOutBack,
-            tween: Tween<double>(begin: 0, end: _getScale()),
-            builder: (context, value, child) => Transform.scale(
-              scale: value,
-              child: child,
+                  if (action != _prepareAcion) {
+                    _prepareAcion = action;
+                    setState(() {});
+                  }
+                },
+                onScaleEnd: (_) {
+                  switch (_prepareAcion) {
+                    case _Action.increase:
+                      _gridState.currentState?.increaseDepth();
+                      break;
+                    case _Action.decrease:
+                      _gridState.currentState?.decreaseDepth();
+                      break;
+                    default:
+                      return;
+                  }
+                  _prepareAcion = _Action.none;
+                  setState(() {});
+                },
+                child: TweenAnimationBuilder<double>(
+                  duration: Animations.short.ms,
+                  curve: Curves.easeOutBack,
+                  tween: Tween<double>(begin: 0, end: _getScale()),
+                  builder: (context, value, child) => Transform.scale(
+                    scale: value,
+                    child: child,
+                  ),
+                  child: GridLayout(key: _gridState),
+                ),
+              ),
             ),
-            child: GridLayout(key: _gridState),
-          ),
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    _gridState.currentState?.increaseDepth();
+                  },
+                  child: const Icon(Icons.add),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    _gridState.currentState?.decreaseDepth();
+                  },
+                  child: const Icon(Icons.remove),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -93,7 +115,17 @@ class GridLayoutState extends State<GridLayout> {
   int _shownDepth = 0;
   _Action _lastAction = _Action.none;
 
-  math.Point<int>? _magnifierPoints = null;
+  math.Point<int>? _magnifierPoints;
+  double _evaluateScaleByMagnifierPoint(math.Point<int> point) {
+    if (_magnifierPoints == null) return 1.0;
+    if (point == _magnifierPoints) return 1.1;
+
+    final magnifierPoints = _magnifierPoints!;
+    if ((point.x - magnifierPoints.x).abs() == 1 && point.y - magnifierPoints.y == 0) return 0.85;
+    if (point.x - magnifierPoints.x == 0 && (point.y - magnifierPoints.y).abs() == 1) return 0.85;
+    if ((point.x - magnifierPoints.x).abs() == 1 && (point.y - magnifierPoints.y).abs() == 1) return 0.7;
+    return 1.0;
+  }
 
   void resetDepth() {
     sizes = [math.Point(getWidth(_shownDepth), getHeight(_shownDepth))];
@@ -193,7 +225,7 @@ class GridLayoutState extends State<GridLayout> {
       }
     }
 
-    return points.map((e) => math.Point(e.x + _div2(spacing.x), e.y + _div2(spacing.y))).toList();
+    return points.map((e) => math.Point(e.x + spacing.x, e.y + spacing.y)).toList();
   }
 
   void _calculateBorderPoints() {
@@ -228,11 +260,7 @@ class GridLayoutState extends State<GridLayout> {
 
         final borderPointsEntries = _borderPoints.asMap().entries;
 
-        return GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onPanUpdate: (_) {
-            print('UPDATE!');
-          },
+        return TouchHoverRegion(
           child: Stack(
             children: [
               const Positioned.fill(child: ColoredBox(color: Colors.transparent)),
@@ -255,15 +283,27 @@ class GridLayoutState extends State<GridLayout> {
       (availableSize.width - getWidth(_shownDepth) * _tileSize(_shownDepth) + _spacingTile(_shownDepth)) / 2,
       (availableSize.height - getHeight(_shownDepth) * _tileSize(_shownDepth) + _spacingTile(_shownDepth)) / 2,
     );
+
+    final spacingCell = _spaceBetweenDepth(_shownDepth, 0);
+
     return Stack(
       key: const ValueKey('center-tile-stack'),
       children: [
-        for (final point in _points.asMap().entries) _centerTile(point, remainSize),
+        for (final point in _points.asMap().entries)
+          _centerTile(
+            point,
+            remainSize,
+            spacingCell,
+          ),
       ],
     );
   }
 
-  Widget _centerTile(MapEntry<int, math.Point<int>> point, Size remainSize) {
+  Widget _centerTile(
+    MapEntry<int, math.Point<int>> point,
+    Size remainSize,
+    math.Point<int> spacingCell,
+  ) {
     final beginDepth = () {
       switch (_lastAction) {
         case _Action.decrease:
@@ -275,7 +315,6 @@ class GridLayoutState extends State<GridLayout> {
       }
     }();
     final endDepth = _shownDepth;
-    final spacingCell = _spaceBetweenDepth(endDepth, 0);
     final column = point.value.x + spacingCell.x;
     final row = point.value.y + spacingCell.y;
     final coordinate = _calculateCoordinate(column, row, endDepth);
@@ -286,7 +325,6 @@ class GridLayoutState extends State<GridLayout> {
       if (_lastAction == _Action.decrease) return null;
       return _getDelay(coordinate: coordinate, depth: endDepth);
     }();
-    final transitionPosition = _transitionPosition(coordinate, endDepth, scale: 1);
     final moveBegin = () {
       switch (_lastAction) {
         case _Action.decrease:
@@ -302,9 +340,12 @@ class GridLayoutState extends State<GridLayout> {
         case _Action.decrease:
           return Offset.zero;
         case _Action.increase:
-          return transitionPosition * 0.2;
+          return Offset(
+            6 / 5 * coordinate.x.toDouble(),
+            6 / 5 * coordinate.y.toDouble(),
+          );
         case _Action.none:
-          return transitionPosition;
+          return Offset.zero;
       }
     }();
 
@@ -324,36 +365,50 @@ class GridLayoutState extends State<GridLayout> {
             curve: Curves.easeOutBack,
             begin: beginTileSize,
             end: endTileSize,
-            builder: (context, value, child) => Listener(
-              onPointerHover: (_) {
-                // print('Hovering $column $row');
-              },
-              onPointerSignal: (details) {
-                print('$details');
-              },
-              child: Container(
-                width: value,
-                height: value,
-                decoration: BoxDecoration(
-                  image: point.key < Images.all.length
-                      ? DecorationImage(
-                          image: AssetImage(Images.all[point.key]),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
-                  borderRadius: BorderRadius.circular(_adaptiveRadius),
-                  border: Border.all(
-                    color: point.key < Images.all.length ? Colors.white.withOpacity(0) : Colors.white,
-                    width: point.key < Images.all.length ? 0 : 1,
-                  ),
+            builder: (context, value, child) => TouchHoverDectector(
+              delegate: TouchHoverDelegate(
+                key: math.Point(column, row),
+                onEnter: () {
+                  _magnifierPoints = math.Point(column, row);
+                  setState(() {});
+                },
+                onExit: () {
+                  _magnifierPoints = null;
+                  setState(() {});
+                },
+              ),
+              child: TweenAnimationBuilder<double>(
+                duration: Animations.short.ms,
+                tween: Tween<double>(begin: 1.0, end: _evaluateScaleByMagnifierPoint(math.Point(column, row))),
+                curve: Curves.easeOutBack,
+                builder: (context, value, child) => Transform.scale(
+                  scale: value,
+                  child: child,
                 ),
-                child: point.key < Images.all.length
-                    ? null
-                    : const FittedBox(
-                        child: Center(
-                          child: Icon(CupertinoIcons.add),
+                child: Container(
+                  width: value,
+                  height: value,
+                  decoration: BoxDecoration(
+                    image: point.key < Images.all.length
+                        ? DecorationImage(
+                            image: AssetImage(Images.all[point.key]),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                    borderRadius: BorderRadius.circular(_adaptiveRadius),
+                    border: Border.all(
+                      color: point.key < Images.all.length ? Colors.white.withOpacity(0) : Colors.white,
+                      width: point.key < Images.all.length ? 0 : 1,
+                    ),
+                  ),
+                  child: point.key < Images.all.length
+                      ? null
+                      : const FittedBox(
+                          child: Center(
+                            child: Icon(CupertinoIcons.add),
+                          ),
                         ),
-                      ),
+                ),
               ),
             ),
           ),
@@ -402,9 +457,11 @@ class GridLayoutState extends State<GridLayout> {
       (availableSize.height - getHeight(endDepth) * _tileSize(endDepth) + _spacingTile(endDepth)) / 2,
     );
 
-    return Stack(
-      key: ValueKey('border-tile-stack : ${points.key} | $isLastDepth'),
-      children: _borderTile(points, remainSize),
+    return RepaintBoundary(
+      child: Stack(
+        key: ValueKey('border-tile-stack : ${points.key} | $isLastDepth'),
+        children: _borderTile(points, remainSize),
+      ),
     );
   }
 
@@ -459,12 +516,17 @@ class GridLayoutState extends State<GridLayout> {
       final coordinate = _calculateCoordinate(pointEntry.value.x, pointEntry.value.y, endDepth);
 
       final moveDelay = isLastDepth ? null : _getDelay(coordinate: coordinate, depth: endDepth);
-      final transitionPosition = _transitionPosition(
-        coordinate,
-        _shownDepth,
-        additionX: isLastDepth ? -remainSize.width / 2 : 0,
-        additionY: isLastDepth ? -remainSize.height / 2 : 0,
-      );
+      final transitionPosition = isCenter
+          ? Offset(
+              6 / 5 * coordinate.x.toDouble(),
+              6 / 5 * coordinate.y.toDouble(),
+            )
+          : _transitionPosition(
+              coordinate,
+              _shownDepth,
+              additionX: isLastDepth ? -remainSize.width / 2 : 0,
+              additionY: isLastDepth ? -remainSize.height / 2 : 0,
+            );
       final moveBegin = () {
         if (isCenter) return Offset.zero;
 
@@ -478,7 +540,7 @@ class GridLayoutState extends State<GridLayout> {
         }
       }();
       final moveEnd = () {
-        if (isCenter) return transitionPosition * 0.4;
+        if (isCenter) return transitionPosition * 0.2;
 
         return isLastDepth ? transitionPosition : Offset.zero;
       }();
@@ -493,33 +555,55 @@ class GridLayoutState extends State<GridLayout> {
             key: ValueKey('point : ${pointEntry.key} | depth : ${points.key} | $isCenter'),
             effects: [
               CustomEffect(
-                duration: _lastAction == _Action.decrease ? Animations.medium.ms : Animations.medium.ms,
+                duration: Animations.medium.ms,
                 curve: Curves.easeOutBack,
                 begin: beginTileSize,
                 end: endTileSize,
-                builder: (context, value, child) => Container(
-                  width: value,
-                  height: value,
-                  decoration: BoxDecoration(
-                    image: imagePosition < Images.all.length
-                        ? DecorationImage(
-                            image: AssetImage(Images.all[imagePosition]),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
-                    borderRadius: BorderRadius.circular(_adaptiveRadius),
-                    border: Border.all(
-                      color: imagePosition < Images.all.length ? Colors.white.withOpacity(0) : Colors.white,
-                      width: imagePosition < Images.all.length ? 0 : 1,
+                builder: (context, value, child) => TouchHoverDectector(
+                  delegate: TouchHoverDelegate(
+                    key: pointEntry.value,
+                    onEnter: () {
+                      _magnifierPoints = pointEntry.value;
+                      setState(() {});
+                    },
+                    onExit: () {
+                      _magnifierPoints = null;
+                      setState(() {});
+                    },
+                  ),
+                  child: TweenAnimationBuilder<double>(
+                    duration: Animations.short.ms,
+                    tween: Tween<double>(begin: 1.0, end: _evaluateScaleByMagnifierPoint(pointEntry.value)),
+                    curve: Curves.easeOutBack,
+                    builder: (context, value, child) => Transform.scale(
+                      scale: value,
+                      child: child,
+                    ),
+                    child: Container(
+                      width: value,
+                      height: value,
+                      decoration: BoxDecoration(
+                        image: imagePosition < Images.all.length
+                            ? DecorationImage(
+                                image: AssetImage(Images.all[imagePosition]),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                        borderRadius: BorderRadius.circular(_adaptiveRadius),
+                        border: Border.all(
+                          color: imagePosition < Images.all.length ? Colors.white.withOpacity(0) : Colors.white,
+                          width: imagePosition < Images.all.length ? 0 : 1,
+                        ),
+                      ),
+                      child: imagePosition < Images.all.length
+                          ? null
+                          : const FittedBox(
+                              child: Center(
+                                child: Icon(CupertinoIcons.add),
+                              ),
+                            ),
                     ),
                   ),
-                  child: imagePosition < Images.all.length
-                      ? null
-                      : const FittedBox(
-                          child: Center(
-                            child: Icon(CupertinoIcons.add),
-                          ),
-                        ),
                 ),
               ),
               FadeEffect(
@@ -604,10 +688,10 @@ class GridLayoutState extends State<GridLayout> {
   }
 
   Size availableSize = Size.zero;
-  double _spacingTile(int depth) => 12 - depth * 2;
+  double _spacingTile(int depth) => 12;
   double _tileSize(int depth) => _adaptiveSize(depth) + _spacingTile(depth);
 
-  double _adaptiveSize(int depth) => _baseSize - depth * 5;
+  double _adaptiveSize(int depth) => _baseSize - depth * 16;
   final double _baseSize = 56;
   final double _adaptiveRadius = 8;
 
