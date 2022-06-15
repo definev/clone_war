@@ -131,7 +131,7 @@ class GridLayoutState extends State<GridLayout> {
   }
 
   void increaseDepth() {
-    if (_lastAction != _Action.none || _shownDepth >= 4) return;
+    if (_lastAction != _Action.none || _shownDepth >= 2) return;
     setState(() {
       _lastAction = _Action.increase;
       _shownDepth += 1;
@@ -304,35 +304,35 @@ class GridLayoutState extends State<GridLayout> {
     final row = point.value.y + spacingCell.y;
     final coordinate = _calculateCoordinate(column, row, endDepth);
 
-    final tileSize = _tileSize(endDepth);
-
     final moveDelay = () {
       if (_lastAction == _Action.decrease) return null;
       return _getDelay(coordinate: coordinate, depth: endDepth);
-    }();
-    const moveBegin = Offset.zero;
-    final moveEnd = () {
-      switch (_lastAction) {
-        case _Action.decrease:
-          return Offset.zero;
-        case _Action.increase:
-          return Offset(
-            6 / 5 * coordinate.x.toDouble(),
-            6 / 5 * coordinate.y.toDouble(),
-          );
-        case _Action.none:
-          return Offset.zero;
-      }
     }();
 
     final beginTileSize = _adaptiveSize(beginDepth);
     final endTileSize = _adaptiveSize(endDepth);
 
-    return AnimatedPositioned(
+    final beginOffset = () {
+      return Offset(
+        remainSize.width + column * _tileSize(beginDepth),
+        remainSize.height + row * _tileSize(beginDepth),
+      );
+    }();
+    final endOffset = () {
+      return Offset(
+        remainSize.width + column * _tileSize(endDepth),
+        remainSize.height + row * _tileSize(endDepth),
+      );
+    }();
+
+    return TweenAnimationBuilder<Offset>(
       duration: _lastAction == _Action.decrease ? Animations.slow.ms : Animations.medium.ms,
       curve: Curves.easeOutBack,
-      left: remainSize.width + column * tileSize,
-      top: remainSize.height + row * tileSize,
+      tween: Tween(
+        begin: beginOffset,
+        end: endOffset,
+      ),
+      builder: (context, value, child) => Positioned(left: value.dx, top: value.dy, child: child!),
       child: Animate(
         key: ValueKey('center : ${point.key} ${point.value} | $_shownDepth'),
         effects: [
@@ -390,26 +390,29 @@ class GridLayoutState extends State<GridLayout> {
           ),
           MoveEffect(
             delay: moveDelay,
-            duration: Animations.medium.ms,
-            begin: moveBegin,
-            end: moveEnd,
-            curve: Curves.easeOutBack,
-          ),
-          const ThenEffect(),
-          MoveEffect(
-            duration: Animations.medium.ms,
+            duration: _lastAction == _Action.increase ? Animations.instant.ms : Animations.medium.ms,
             begin: Offset.zero,
-            end: -moveEnd,
-            curve: Curves.easeOutBack,
+            end: () {
+              if (_lastAction == _Action.none) return Offset.zero;
+              if (_lastAction == _Action.increase) {
+                return _transitionPosition(coordinate, endDepth) *
+                    ((Animations.medium - Animations.instant) / Animations.medium);
+              }
+              return Offset.zero;
+            }(),
+            curve: Curves.linear,
           ),
           const ThenEffect(),
-          CallbackEffect(
-            callback: () {
-              if (_lastAction == _Action.increase) {
-                setState(() => _lastAction = _Action.none);
-              }
-            },
-          ),
+          if (_lastAction == _Action.increase) ...[
+            MoveEffect(
+              duration: (Animations.medium - Animations.instant).ms,
+              begin: Offset.zero,
+              end: -_transitionPosition(coordinate, endDepth) *
+                  ((Animations.medium - Animations.instant) / Animations.medium),
+              curve: Curves.linear,
+            ),
+            const ThenEffect(),
+          ],
         ],
       ),
     );
@@ -440,7 +443,10 @@ class GridLayoutState extends State<GridLayout> {
     return _points.length + total;
   }
 
-  List<Widget> _borderTile(MapEntry<int, List<math.Point<int>>> points, Size remainSize) {
+  List<Widget> _borderTile(
+    MapEntry<int, List<math.Point<int>>> points,
+    Size remainSize,
+  ) {
     var list = <Widget>[];
     final isLastDepth = points.key == _shownDepth && _lastAction == _Action.decrease;
     final isCenter = (_lastAction == _Action.increase && points.key == _shownDepth - 1) || _lastAction == _Action.none
@@ -491,8 +497,6 @@ class GridLayoutState extends State<GridLayout> {
       }();
       final transitionPosition = _transitionPosition(coordinate, _shownDepth);
       final moveBegin = () {
-        if (isCenter) return Offset.zero;
-
         switch (_lastAction) {
           case _Action.decrease:
             return Offset.zero;
@@ -503,19 +507,6 @@ class GridLayoutState extends State<GridLayout> {
         }
       }();
       final moveEnd = () {
-        if (isCenter) {
-          switch (_lastAction) {
-            case _Action.decrease:
-              return Offset.zero;
-            case _Action.increase:
-              return Offset(
-                6 / 5 * coordinate.x.toDouble(),
-                6 / 5 * coordinate.y.toDouble(),
-              );
-            case _Action.none:
-              return Offset.zero;
-          }
-        }
         if (isLastDepth) return transitionPosition;
 
         return Offset.zero;
@@ -658,25 +649,36 @@ class GridLayoutState extends State<GridLayout> {
               if (isCenter) ...[
                 MoveEffect(
                   delay: moveDelay,
-                  duration: Animations.medium.ms,
-                  begin: moveBegin,
-                  end: moveEnd,
-                  curve: Curves.easeOutBack,
+                  duration: _lastAction == _Action.increase ? Animations.instant.ms : Animations.medium.ms,
+                  begin: Offset.zero,
+                  end: () {
+                    if (_lastAction == _Action.none) return Offset.zero;
+                    if (_lastAction == _Action.increase) {
+                      return _transitionPosition(coordinate, endDepth) *
+                          ((Animations.medium - Animations.instant) / Animations.medium);
+                    }
+                    return Offset.zero;
+                  }(),
+                  curve: Curves.linear,
                 ),
                 const ThenEffect(),
-                MoveEffect(
-                  duration: Animations.medium.ms,
-                  begin: Offset.zero,
-                  end: -moveEnd,
-                  curve: Curves.easeOutBack,
-                ),
+                if (_lastAction == _Action.increase) ...[
+                  MoveEffect(
+                    duration: (Animations.medium - Animations.instant).ms,
+                    begin: Offset.zero,
+                    end: -_transitionPosition(coordinate, endDepth) *
+                        ((Animations.medium - Animations.instant) / Animations.medium),
+                    curve: Curves.linear,
+                  ),
+                  const ThenEffect(),
+                ]
               ] else if (isLastDepth) ...[
                 MoveEffect(
                   duration: Animations.medium.ms,
                   delay: moveDelay,
                   begin: moveBegin,
                   end: moveEnd,
-                  curve: Curves.easeOutExpo,
+                  curve: Curves.linear,
                 ),
                 const ThenEffect(),
                 CallbackEffect(
@@ -698,17 +700,24 @@ class GridLayoutState extends State<GridLayout> {
               ] else ...[
                 MoveEffect(
                   delay: moveDelay,
-                  duration: Animations.short.ms,
+                  duration: Animations.medium.ms,
                   begin: moveBegin,
                   end: moveEnd,
-                  curve: Curves.easeOutBack,
+                  curve: Curves.linear,
                 ),
                 const ThenEffect(),
                 MoveEffect(
-                  duration: Animations.short.ms,
+                  duration: Animations.medium.ms,
                   begin: Offset.zero,
                   end: -moveEnd,
-                  curve: Curves.easeOutBack,
+                  curve: Curves.linear,
+                ),
+                CallbackEffect(
+                  callback: () {
+                    if (_lastAction == _Action.increase) {
+                      setState(() => _lastAction = _Action.none);
+                    }
+                  },
                 ),
               ],
             ],
@@ -829,4 +838,5 @@ class Animations {
   static const slow = 800;
   static const medium = 500;
   static const short = 300;
+  static const instant = 300;
 }

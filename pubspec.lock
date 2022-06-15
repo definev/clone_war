@@ -72,9 +72,11 @@ packages:
   flutter_animate:
     dependency: "direct main"
     description:
-      name: flutter_animate
-      url: "https://pub.dartlang.org"
-    source: hosted
+      path: "."
+      ref: main
+      resolved-ref: e314e688bb27949f89fc772365b1c01ae4b2ab60
+      url: "https://github.com/gskinner/flutter_animate.git"
+    source: git
     version: "0.1.1"
   flutter_lints:
     dependency: "direct dev"
