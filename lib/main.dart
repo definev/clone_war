@@ -1,4 +1,5 @@
-import 'package:clone_war/grid_zoom.dart';
+import 'package:clone_war/01_grid_layout/grid_zoom.dart';
+import 'package:clone_war/utils/app_router.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 
@@ -11,12 +12,14 @@ class CloneWar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'Clone War',
       theme: FlexColorScheme.dark(
         scheme: FlexScheme.aquaBlue,
       ).toTheme,
-      home: const GridLayoutChallenge(),
+      routeInformationProvider: AppRouter.router.routeInformationProvider,
+      routeInformationParser: AppRouter.router.routeInformationParser,
+      routerDelegate: AppRouter.router.routerDelegate,
     );
   }
 }

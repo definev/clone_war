@@ -40,6 +40,7 @@ dependencies:
       url: https://github.com/gskinner/flutter_animate.git
       ref: main
   simple_animations: ^4.1.0
+  go_router: ^4.1.0
 
 dev_dependencies:
   flutter_test:
