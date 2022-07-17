@@ -1,10 +1,15 @@
-import 'dart:math';
 import 'dart:ui';
 
 import 'package:clone_war/01_grid_layout/grid_zoom.dart';
 import 'package:flutter/material.dart';
 
-enum _LastState { close, open }
+enum _LastState {
+  close,
+  open;
+
+  _LastState get opposite =>
+      this == _LastState.close ? _LastState.open : _LastState.close;
+}
 
 class BubbleSheetChallenge extends StatefulWidget {
   const BubbleSheetChallenge({Key? key}) : super(key: key);
@@ -34,37 +39,98 @@ class _BubbleSheetChallengeState extends State<BubbleSheetChallenge>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 560),
     );
-    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0) //
-        .chain(CurveTween(curve: Curves.ease))
-        .animate(_controller);
-
-    _blurAnimation = Tween<double>(begin: 0.0, end: 1.0) //
-        .chain(CurveTween(curve: Curves.ease))
-        .animate(_controller);
-
-    _sheetSizeAnimation = TweenSequence<double>(
-      [
-        TweenSequenceItem(
-          tween: Tween(begin: 0.1, end: 0.4) //
-              .chain(CurveTween(curve: Curves.easeIn)),
-          weight: 50,
-        ),
-        TweenSequenceItem(
-          tween: Tween(begin: 0.4, end: 0.7) //
-              .chain(CurveTween(curve: Curves.ease)),
-          weight: 25,
-        ),
-        TweenSequenceItem(
-          tween: Tween(begin: 0.7, end: 1.0) //
-              .chain(CurveTween(curve: Curves.easeOut)),
-          weight: 25,
-        ),
-      ],
-    ).animate(_controller);
-
     _controller.addListener(() => setState(() {}));
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed ||
+          status == AnimationStatus.dismissed) {
+        _configurationAnimation();
+      }
+    });
+
+    _configurationAnimation();
+  }
+
+  void _configurationAnimation() {
+    final easeTween = (Tween<double>()
+          ..begin = 0.0
+          ..end = 1.0)
+        .chain(CurveTween(curve: Curves.ease));
+
+    final sheetSizeTween = () {
+      switch (_lastState) {
+        case _LastState.close:
+          return TweenSequence<double>(
+            [
+              TweenSequenceItem(
+                tween: (Tween<double>()
+                      ..begin = 0.1
+                      ..end = 0.4)
+                    .chain(CurveTween(curve: Curves.ease)),
+                weight: 50,
+              ),
+              TweenSequenceItem(
+                tween: (Tween<double>()
+                      ..begin = 0.4
+                      ..end = 0.7)
+                    .chain(CurveTween(curve: Curves.linear)),
+                weight: 25,
+              ),
+              TweenSequenceItem(
+                tween: (Tween<double>()
+                      ..begin = 0.7
+                      ..end = 1.0)
+                    .chain(CurveTween(curve: Curves.easeOut)),
+                weight: 25,
+              ),
+            ],
+          );
+        case _LastState.open:
+          return TweenSequence<double>(
+            [
+              TweenSequenceItem(
+                tween: (Tween<double>()
+                      ..begin = 0.1
+                      ..end = 0.3)
+                    .chain(CurveTween(curve: Curves.easeIn)),
+                weight: 25,
+              ),
+              TweenSequenceItem(
+                tween: (Tween<double>()
+                      ..begin = 0.3
+                      ..end = 0.6)
+                    .chain(CurveTween(curve: Curves.linear)),
+                weight: 25,
+              ),
+              TweenSequenceItem(
+                tween: (Tween<double>()
+                      ..begin = 0.6
+                      ..end = 1.0)
+                    .chain(CurveTween(curve: Curves.ease)),
+                weight: 50,
+              ),
+            ],
+          );
+      }
+    }();
+
+    _scaleAnimation = easeTween.animate(_controller);
+    _blurAnimation = easeTween.animate(_controller);
+
+    _sheetSizeAnimation = sheetSizeTween.animate(_controller);
+  }
+
+  void _notifController(_LastState state) {
+    _lastState = state;
+    switch (state) {
+      case _LastState.open:
+        _controller.forward();
+        break;
+      case _LastState.close:
+        _controller.reverse();
+        break;
+    }
   }
 
   @override
@@ -98,52 +164,33 @@ class _BubbleSheetChallengeState extends State<BubbleSheetChallenge>
               },
               onVerticalDragUpdate: (details) {
                 _currentOffset = details.globalPosition;
+                double thresholdPercent;
                 if (_lastState == _LastState.close) {
-                  var thresholdPercent =
+                  thresholdPercent =
                       (_startOffset.dy - _currentOffset.dy) / _threshold;
-                  if (thresholdPercent < 0) {
-                    thresholdPercent = 0;
-                  } else if (thresholdPercent > 0.5) {
-                    thresholdPercent = 0.5;
-                  }
+                } else {
+                  thresholdPercent =
+                      (_currentOffset.dy - _startOffset.dy) / _threshold;
+                }
+                if (thresholdPercent < 0) {
+                  thresholdPercent = 0;
+                } else if (thresholdPercent > 0.5) {
+                  thresholdPercent = 0.5;
+                }
 
+                if (_lastState == _LastState.close) {
                   _controller.value = thresholdPercent;
                 } else {
-                  var thresholdPercent =
-                      (_currentOffset.dy - _startOffset.dy) / _threshold;
-                  if (thresholdPercent < 0) {
-                    thresholdPercent = 0;
-                  } else if (thresholdPercent > 0.5) {
-                    thresholdPercent = 0.51;
-                  }
-
                   _controller.value = 1 - thresholdPercent;
                 }
-                setState(() {});
               },
               onVerticalDragEnd: (details) {
                 final velocity = details.velocity.pixelsPerSecond.dy;
 
-                if (velocity.abs() > 500) {
-                  switch (_lastState) {
-                    case _LastState.close:
-                      _lastState = _LastState.open;
-                      _controller.forward();
-                      break;
-                    case _LastState.open:
-                      _lastState = _LastState.close;
-                      _controller.reverse();
-                      break;
-                  }
-                  return;
-                }
-
-                if (_controller.value >= 0.5) {
-                  _lastState = _LastState.open;
-                  _controller.forward();
+                if (velocity.abs() > 500 || _controller.value == 0.5) {
+                  _notifController(_lastState.opposite);
                 } else {
-                  _lastState = _LastState.close;
-                  _controller.reverse();
+                  _notifController(_lastState);
                 }
               },
               child: Container(
