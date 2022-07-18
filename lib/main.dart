@@ -16,6 +16,7 @@ class CloneWar extends StatelessWidget {
       title: 'Clone War',
       theme: FlexColorScheme.dark(
         scheme: FlexScheme.aquaBlue,
+        useMaterial3: true,
       ).toTheme,
       routeInformationProvider: AppRouter.router.routeInformationProvider,
       routeInformationParser: AppRouter.router.routeInformationParser,

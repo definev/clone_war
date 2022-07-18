@@ -587,10 +587,13 @@ class GridLayoutState extends State<GridLayout> {
       list.add(
         TweenAnimationBuilder<Offset>(
           duration: () {
-            if (isCenter)
-              return _lastAction == _Action.decrease
-                  ? Animations.slow.ms
-                  : Animations.medium.ms;
+            if (isCenter) {
+              if (_lastAction == _Action.decrease) {
+                return Animations.slow.ms;
+              } else {
+                return Animations.medium.ms;
+              }
+            }
             return Animations.slow.ms;
           }(),
           curve: Curves.easeOutBack,
