@@ -15,6 +15,5 @@ class AppRouter {
         builder: (context, state) => ChallengePage(state.params['id']!),
       ),
     ],
-    urlPathStrategy: UrlPathStrategy.path,
   );
 }

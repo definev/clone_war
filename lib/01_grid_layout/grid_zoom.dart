@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
-import 'package:clone_war/resources/resources.dart';
 import 'package:clone_war/01_grid_layout/touch_hover_region.dart';
+import 'package:clone_war/resources/resources.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -739,7 +739,7 @@ class GridLayoutState extends State<GridLayout> {
                 ),
                 const ThenEffect(),
                 CallbackEffect(
-                  callback: () {
+                  callback: (_) {
                     if (isLastDepth) {
                       Future.delayed(
                         Animations.short.ms,
@@ -770,7 +770,7 @@ class GridLayoutState extends State<GridLayout> {
                   curve: Curves.linear,
                 ),
                 CallbackEffect(
-                  callback: () {
+                  callback: (_) {
                     if (_lastAction == _Action.increase) {
                       setState(() => _lastAction = _Action.none);
                     }

@@ -1,5 +1,6 @@
 import 'package:clone_war/01_grid_layout/grid_zoom.dart';
 import 'package:clone_war/02_bubble_sheet/bubble_sheet.dart';
+import 'package:clone_war/03_riveo_page_curl/riveo_page_curl_view.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 
@@ -13,6 +14,11 @@ const challengeData = [
     '2',
     'Bubble challenge',
     'Bubble challenge modal effect',
+  ),
+  ChallengeData(
+    '3',
+    'Riveo page curl challenge',
+    'An animation simulating the turning of a physical page, adding depth and interactivity to digital content.',
   ),
 ];
 
@@ -55,6 +61,8 @@ class ChallengePage extends StatelessWidget {
             ),
           ),
         );
+      case '3':
+        return const RiveoPageCurlView();
       default:
         return const Center(child: Text('Unknown challenge'));
     }
@@ -80,11 +88,11 @@ class ExamplePage extends StatelessWidget {
             padding: const EdgeInsets.all(8),
             sliver: SliverGrid.count(
               crossAxisCount: 2,
-              children: [
-                const Card(child: FlutterLogo()),
-                const Card(child: FlutterLogo()),
-                const Card(child: FlutterLogo()),
-                const Card(child: FlutterLogo()),
+              children: const [
+                Card(child: FlutterLogo()),
+                Card(child: FlutterLogo()),
+                Card(child: FlutterLogo()),
+                Card(child: FlutterLogo()),
               ],
             ),
           ),
