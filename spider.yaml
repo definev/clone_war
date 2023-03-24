@@ -19,9 +19,13 @@ use_references_list: false
 package: resources
 
 groups:
-  - path: assets/
-    class_name: Images
-    types: [ .png, .jpg, .jpeg, .webp, .webm, .bmp ]
+  - path: assets/challenge1
+    class_name: Challenge1Images
+    types: [.png, .jpg, .jpeg, .webp, .webm, .bmp]
+
+  - path: assets/challenge3
+    class_name: Challenge3Images
+    types: [.png, .jpg, .jpeg, .webp, .webm, .bmp]
 #  - path: assets/vectors
 #    class_name: Svgs
 #    package: res
