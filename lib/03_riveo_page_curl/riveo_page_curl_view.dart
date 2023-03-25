@@ -1,6 +1,8 @@
+import 'dart:ui';
+
 import 'package:clone_war/03_riveo_page_curl/riveo_card.dart';
 import 'package:clone_war/resources/resources.dart';
-import 'package:flex_color_scheme/flex_color_scheme.dart';
+import 'package:flextras/flextras.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
@@ -44,79 +46,116 @@ class RiveoPageCurlView extends StatefulWidget {
 class _RiveoPageCurlViewState extends State<RiveoPageCurlView> {
   int currentPage = 0;
 
+  double bendValue = 0.0;
+
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: FlexColorScheme.dark().toTheme,
-      child: Scaffold(
-        body: Stack(
-          children: [
-            Positioned.fill(
-              child: AnimatedContainer(
-                duration: 300.ms,
-                curve: Curves.easeInOutCubic,
-                decoration: BoxDecoration(
-                  color: Challenge3PageData.values[currentPage].color,
-                ),
+    final pageData = Challenge3PageData.values[currentPage];
+
+    final titles = pageData.title.split(' ');
+    const fontSize = 60.0;
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: AnimatedContainer(
+              duration: 500.ms,
+              curve: Curves.easeInOutCubicEmphasized,
+              decoration: BoxDecoration(
+                color: pageData.color,
               ),
             ),
-            SafeArea(
-              top: false,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const SizedBox(),
-                  ElevatedButton(
-                    onPressed: () => setState(() {
-                      currentPage = (currentPage + 1) % Challenge3PageData.values.length;
-                    }),
-                    child: const Text('Next'),
-                  ),
-                  AspectRatio(
-                    aspectRatio: 119 / 175,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: RiveoCard(
-                        hiddenChild: const ColoredBox(
-                          color: Colors.red,
-                        ),
-                        child: _buildSplashImage(Challenge3PageData.values[currentPage].image) //
-                            .animate(key: ValueKey(currentPage))
-                            .fadeIn(
-                              duration: 300.ms,
-                              curve: Curves.easeInOutCubic,
-                            )
-                            .custom(
-                              duration: 300.ms,
-                              curve: Curves.easeInOutCubic,
-                              begin: 1,
-                              end: 0,
-                              builder: (context, value, child) => Stack(
-                                children: [
-                                  Positioned.fill(
-                                    child: Opacity(
-                                      opacity: value,
-                                      child: _buildSplashImage(
-                                        Challenge3PageData
-                                            .values[currentPage - 1 < 0
-                                                ? Challenge3PageData.values.length - 1
-                                                : currentPage - 1]
-                                            .image,
-                                      ),
-                                    ),
-                                  ),
-                                  Positioned.fill(child: child),
-                                ],
-                              ),
-                            ),
-                      ),
+          ),
+          SafeArea(
+            child: Column(
+              children: [
+                Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                      child: StoryProgressBar(currentPage),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+                Expanded(
+                  child: Column(
+                    children: [
+                      PaddedColumn(
+                        padding: const EdgeInsets.only(
+                          top: 50,
+                          left: 25,
+                        ),
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            titles[0],
+                            style: Theme.of(context) //
+                                .textTheme
+                                .labelSmall!
+                                .copyWith(
+                              fontSize: fontSize,
+                              height: 1,
+                              fontVariations: [
+                                const FontVariation('wght', 300),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 20 + 5 * bendValue),
+                          Text(
+                            titles[1],
+                            style: Theme.of(context) //
+                                .textTheme
+                                .labelSmall!
+                                .copyWith(
+                              fontSize: fontSize + 20 * bendValue,
+                              height: 0.8 + 0.2 * bendValue,
+                              color: Color.lerp(pageData.color, Colors.white, 0.1 + 0.9 * bendValue),
+                              fontVariations: [
+                                FontVariation('wght', 300 + bendValue * 300),
+                              ],
+                            ),
+                          ),
+                          // SizedBox(height: 20 * bendValue + 5 * (1 - bendValue)),
+                        ],
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                          child: RiveoCard(
+                            onVerticalDrag: (value) => setState(() => bendValue = value),
+                            onHorizontalSwipe: (value) {
+                              switch (value) {
+                                case AxisDirection.left:
+                                  setState(() {
+                                    currentPage = (currentPage - 1) % Challenge3PageData.values.length;
+                                  });
+                                  break;
+                                case AxisDirection.right:
+                                  setState(() {
+                                    currentPage = (currentPage + 1) % Challenge3PageData.values.length;
+                                  });
+                                  break;
+                                default:
+                              }
+                            },
+                            hiddenChild: ColoredBox(color: pageData.color),
+                            child: _buildSplashImage(pageData.image),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                      .animate(key: ValueKey(pageData.image)) //
+                      .fadeIn(
+                        duration: 500.ms,
+                        curve: Curves.easeInOutCubicEmphasized,
+                      ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -125,13 +164,60 @@ class _RiveoPageCurlViewState extends State<RiveoPageCurlView> {
     return DecoratedBox(
       position: DecorationPosition.foreground,
       decoration: BoxDecoration(
-        border: Border.all(width: 2, color: Colors.white, strokeAlign: BorderSide.strokeAlignInside),
+        border: Border.all(
+          width: 1.5,
+          color: Colors.black,
+          strokeAlign: BorderSide.strokeAlignInside,
+        ),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Image.asset(
         image,
         fit: BoxFit.cover,
       ),
+    );
+  }
+}
+
+class StoryProgressBar extends StatelessWidget {
+  const StoryProgressBar(this.currentPage, {super.key});
+
+  final int currentPage;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 9.0;
+        final maxWidth = constraints.maxWidth - gap * 2;
+        return SeparatedRow(
+          separatorBuilder: () => const SizedBox(width: gap),
+          children: [
+            for (int i = 0; i < 3; i++)
+              TweenAnimationBuilder<double>(
+                tween: Tween<double>(
+                  begin: 1,
+                  end: currentPage == i ? 2 : 1,
+                ),
+                curve: Curves.easeInOutCubicEmphasized,
+                duration: 300.ms,
+                builder: (context, value, child) {
+                  return SizedBox(
+                    width: maxWidth / 4 * value,
+                    height: 10,
+                    child: child,
+                  );
+                },
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: i <= currentPage ? Colors.white : Colors.white24,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

@@ -10,8 +10,8 @@ uniform sampler2D image;
 
 uniform vec2 resolution;
 uniform vec4 container;
-uniform float cornerRadius;
 uniform float progress;
+uniform float cornerRadius;
 uniform float cylinderRadius;
 
 const float PI = 3.1415926535897932384626433832795;

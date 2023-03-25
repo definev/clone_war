@@ -62,7 +62,13 @@ class ChallengePage extends StatelessWidget {
           ),
         );
       case '3':
-        return const RiveoPageCurlView();
+        return Theme(
+          data: FlexColorScheme.light(
+            useMaterial3: true,
+            fontFamily: 'Unique',
+          ).toTheme,
+          child: const RiveoPageCurlView(),
+        );
       default:
         return const Center(child: Text('Unknown challenge'));
     }

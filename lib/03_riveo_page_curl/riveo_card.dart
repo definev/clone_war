@@ -10,13 +10,17 @@ class RiveoCard extends StatefulWidget {
     required this.hiddenChild,
     required this.child,
     this.radius = 20,
-    this.padding = const EdgeInsets.fromLTRB(10, 100, 10, 20),
+    this.padding = const EdgeInsets.fromLTRB(20, 70, 20, 20),
+    required this.onHorizontalSwipe,
+    required this.onVerticalDrag,
   });
 
   final double radius;
   final Widget hiddenChild;
   final Widget child;
   final EdgeInsets padding;
+  final ValueChanged<AxisDirection> onHorizontalSwipe;
+  final ValueChanged<double> onVerticalDrag;
 
   @override
   State<RiveoCard> createState() => _RiveoCardState();
@@ -32,12 +36,12 @@ class _RiveoCardState extends State<RiveoCard> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: 250.ms);
-    _controller.addListener(() => setState(() {}));
+    _controller = AnimationController(vsync: this, duration: 300.ms);
+    _controller.addListener(() => setState(() => widget.onVerticalDrag(_animation.value)));
     _animation = CurvedAnimation(
       parent: _controller,
       curve: Curves.ease,
-      reverseCurve: Curves.easeOutBack,
+      reverseCurve: Curves.easeInOutCubicEmphasized,
     );
   }
 
@@ -81,9 +85,9 @@ class _RiveoCardState extends State<RiveoCard> with SingleTickerProviderStateMix
                         // Progress
                         ..setFloat(6, _animation.value)
                         // Radius
-                        ..setFloat(7, max(widget.radius - 0.8, 0))
+                        ..setFloat(7, max(widget.radius, 0))
                         // Cylinder radius
-                        ..setFloat(8, rect.height / pi * 1.05);
+                        ..setFloat(8, rect.height / pi - 10);
 
                       canvas
                         ..save()
@@ -116,6 +120,14 @@ class _RiveoCardState extends State<RiveoCard> with SingleTickerProviderStateMix
                         _controller.forward();
                       } else {
                         _controller.reverse();
+                      }
+                    },
+                    onHorizontalDragEnd: (details) {
+                      final primaryVelocity = details.primaryVelocity ?? 0;
+                      if (primaryVelocity > -400) {
+                        widget.onHorizontalSwipe(AxisDirection.right);
+                      } else if (primaryVelocity < 400) {
+                        widget.onHorizontalSwipe(AxisDirection.left);
                       }
                     },
                     child: widget.child,

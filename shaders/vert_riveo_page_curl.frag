@@ -46,6 +46,10 @@ float saturate(float val) {
   return (val < 0) ? 0 : (val > 1) ? 1 : val;
 }
 
+vec4 backgroundColor(vec2 p) {
+  return mix(texture(image, p / resolution.xy), vec4(0.3, 0.5, 0.1, 1.0), 0.3);
+}
+
 void main() {
   vec2 xy = FlutterFragCoord().xy;
 
@@ -68,7 +72,7 @@ void main() {
     vec2 p2 = vec2(dx2, dy2);
 
     if(inRect(p2, container)) {
-      fragColor = mix(texture(image, p2 / resolution.xy), WHITE, 0.1);
+      fragColor = backgroundColor(p2);
       return;
     }
 
@@ -97,7 +101,7 @@ void main() {
     vec2 p2 = vec2(dx2, dy2);
 
     if(inRect(p2, container)) {
-      fragColor = mix(texture(image, p2 / resolution.xy), WHITE, 0.1);
+      fragColor = backgroundColor(p2);
       return;
     }
 

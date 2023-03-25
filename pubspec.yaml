@@ -33,6 +33,7 @@ dependencies:
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
+  animations: ^2.0.7
   cupertino_icons: ^1.0.2
   flex_color_scheme: ^6.1.2
   flutter_animate: ^4.1.0
@@ -71,7 +72,6 @@ flutter:
   shaders:
     - shaders/riveo_page_curl.frag
     - shaders/vert_riveo_page_curl.frag
-    - shaders/rounded_rect.frag
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
@@ -88,7 +88,7 @@ flutter:
   fonts:
     - family: Unique
       fonts:
-        - asset: assets/fonts/Unique-VF.ttf
+        - asset: assets/fonts/Bitter-VF.ttf
   #   - family: Trajan Pro
   #     fonts:
   #       - asset: fonts/TrajanPro.ttf
