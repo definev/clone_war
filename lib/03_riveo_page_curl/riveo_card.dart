@@ -124,9 +124,9 @@ class _RiveoCardState extends State<RiveoCard> with SingleTickerProviderStateMix
                     },
                     onHorizontalDragEnd: (details) {
                       final primaryVelocity = details.primaryVelocity ?? 0;
-                      if (primaryVelocity > -400) {
+                      if (primaryVelocity > 400) {
                         widget.onHorizontalSwipe(AxisDirection.right);
-                      } else if (primaryVelocity < 400) {
+                      } else if (primaryVelocity < -400) {
                         widget.onHorizontalSwipe(AxisDirection.left);
                       }
                     },
