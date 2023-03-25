@@ -53,7 +53,7 @@ class _RiveoPageCurlViewState extends State<RiveoPageCurlView> {
     final pageData = Challenge3PageData.values[currentPage];
 
     final titles = pageData.title.split(' ');
-    const fontSize = 60.0;
+    const fontSize = 56.0;
 
     return Scaffold(
       body: Stack(
@@ -73,7 +73,7 @@ class _RiveoPageCurlViewState extends State<RiveoPageCurlView> {
                 Column(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                      padding: const EdgeInsets.fromLTRB(25, 20, 25, 0),
                       child: StoryProgressBar(currentPage),
                     ),
                   ],
@@ -83,7 +83,7 @@ class _RiveoPageCurlViewState extends State<RiveoPageCurlView> {
                     children: [
                       PaddedColumn(
                         padding: const EdgeInsets.only(
-                          top: 50,
+                          top: 40,
                           left: 25,
                         ),
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -101,46 +101,54 @@ class _RiveoPageCurlViewState extends State<RiveoPageCurlView> {
                               ],
                             ),
                           ),
-                          SizedBox(height: 20 + 5 * bendValue),
-                          Text(
-                            titles[1],
-                            style: Theme.of(context) //
-                                .textTheme
-                                .labelSmall!
-                                .copyWith(
-                              fontSize: fontSize + 20 * bendValue,
-                              height: 0.8 + 0.2 * bendValue,
-                              color: Color.lerp(pageData.color, Colors.white, 0.1 + 0.9 * bendValue),
-                              fontVariations: [
-                                FontVariation('wght', 300 + bendValue * 300),
-                              ],
+                          SizedBox(height: 10 - 5 * bendValue),
+                          SizedBox(
+                            height: fontSize + 20,
+                            child: Text(
+                              titles[1],
+                              style: Theme.of(context) //
+                                  .textTheme
+                                  .labelSmall!
+                                  .copyWith(
+                                fontSize: fontSize + 20 * bendValue,
+                                height: 0.8 + 0.2 * bendValue,
+                                color: Color.lerp(pageData.color, Colors.white, 0.6 + 0.4 * bendValue),
+                                fontVariations: [
+                                  FontVariation('wght', 300 + bendValue * 300),
+                                ],
+                              ),
                             ),
                           ),
-                          // SizedBox(height: 20 * bendValue + 5 * (1 - bendValue)),
                         ],
                       ),
                       Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 5),
-                          child: RiveoCard(
-                            onVerticalDrag: (value) => setState(() => bendValue = value),
-                            onHorizontalSwipe: (value) {
-                              switch (value) {
-                                case AxisDirection.left:
-                                  setState(() {
-                                    currentPage = (currentPage - 1) % Challenge3PageData.values.length;
-                                  });
-                                  break;
-                                case AxisDirection.right:
-                                  setState(() {
-                                    currentPage = (currentPage + 1) % Challenge3PageData.values.length;
-                                  });
-                                  break;
-                                default:
-                              }
-                            },
-                            hiddenChild: ColoredBox(color: pageData.color),
-                            child: _buildSplashImage(pageData.image),
+                        child: Align(
+                          alignment: Alignment.bottomCenter,
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxHeight: 610),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 5),
+                              child: RiveoCard(
+                                onVerticalDrag: (value) => setState(() => bendValue = value),
+                                onHorizontalSwipe: (value) {
+                                  switch (value) {
+                                    case AxisDirection.left:
+                                      setState(() {
+                                        currentPage = (currentPage - 1) % Challenge3PageData.values.length;
+                                      });
+                                      break;
+                                    case AxisDirection.right:
+                                      setState(() {
+                                        currentPage = (currentPage + 1) % Challenge3PageData.values.length;
+                                      });
+                                      break;
+                                    default:
+                                  }
+                                },
+                                hiddenChild: ColoredBox(color: pageData.color),
+                                child: _buildSplashImage(pageData.image),
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -165,11 +173,11 @@ class _RiveoPageCurlViewState extends State<RiveoPageCurlView> {
       position: DecorationPosition.foreground,
       decoration: BoxDecoration(
         border: Border.all(
-          width: 1.5,
-          color: Colors.black,
+          width: 2.5,
+          color: Colors.black87,
           strokeAlign: BorderSide.strokeAlignInside,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(30),
       ),
       child: Image.asset(
         image,
@@ -204,7 +212,7 @@ class StoryProgressBar extends StatelessWidget {
                 builder: (context, value, child) {
                   return SizedBox(
                     width: maxWidth / 4 * value,
-                    height: 10,
+                    height: 6,
                     child: child,
                   );
                 },

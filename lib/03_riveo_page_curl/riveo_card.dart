@@ -9,8 +9,8 @@ class RiveoCard extends StatefulWidget {
     super.key,
     required this.hiddenChild,
     required this.child,
-    this.radius = 20,
-    this.padding = const EdgeInsets.fromLTRB(20, 70, 20, 20),
+    this.radius = 30,
+    this.padding = const EdgeInsets.fromLTRB(7, 70, 7, 12),
     required this.onHorizontalSwipe,
     required this.onVerticalDrag,
   });
