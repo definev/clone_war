@@ -71,6 +71,7 @@ flutter:
   shaders:
     - shaders/riveo_page_curl.frag
     - shaders/vert_riveo_page_curl.frag
+    - shaders/rounded_rect.frag
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

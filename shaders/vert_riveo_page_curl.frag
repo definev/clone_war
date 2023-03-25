@@ -19,30 +19,23 @@ const float PI = 3.1415926535897932384626433832795;
 const vec4 TRANSPARENT = vec4(0);
 const vec4 WHITE = vec4(1);
 
+// Credit: https://www.shadertoy.com/view/NtVSW1
+float sdRoundRect(vec2 p, vec2 b, float r) {
+  vec2 q = abs(p) - b + r;
+  return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r;
+}
+
 bool inRect(vec2 p, vec4 rect) {
-  bool inRect = p.x >= rect.x && p.x <= rect.z && p.y >= rect.y && p.y <= rect.w;
-  if(!inRect) {
+  vec2 rectSize = vec2((rect.z - rect.x) / 2, (rect.w - rect.y) / 2);
+  vec2 center = vec2(rect.x + rectSize.x, rect.y + rectSize.y);
+
+  float disRect = sdRoundRect(p - center, rectSize, cornerRadius);
+
+  if(disRect > 0.0) {
     return false;
+  } else {
+    return true;
   }
-
-  // Top left corner
-  if(p.x < rect.x + cornerRadius && p.y < rect.y + cornerRadius) {
-    return length(p - vec2(rect.x + cornerRadius, rect.y + cornerRadius)) < cornerRadius;
-  }
-  // // Top right corner
-  if(p.x > rect.z - cornerRadius && p.y < rect.y + cornerRadius) {
-    return length(p - vec2(rect.z - cornerRadius, rect.y + cornerRadius)) < cornerRadius;
-  }
-  // Bottom left corner
-  if(p.x < rect.x + cornerRadius && p.y > rect.w - cornerRadius) {
-    return length(p - vec2(rect.x + cornerRadius, rect.w - cornerRadius)) < cornerRadius;
-  }
-  // Bottom right corner
-  if(p.x > rect.z - cornerRadius && p.y > rect.w - cornerRadius) {
-    return length(p - vec2(rect.z - cornerRadius, rect.w - cornerRadius)) < cornerRadius;
-  }
-
-  return true;
 }
 
 float project(float p, float from, float to) {
@@ -86,7 +79,7 @@ void main() {
 
     if(inRect(p1, container)) {
       fragColor = texture(image, p1 / resolution.xy);
-      fragColor.rgb *= sqrt(saturate((cylinderRadius - distance) / cylinderRadius));
+      fragColor.rgb *= pow(saturate((cylinderRadius - distance) / cylinderRadius), 0.1);
       return;
     }
 

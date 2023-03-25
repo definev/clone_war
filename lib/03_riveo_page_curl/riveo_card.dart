@@ -32,9 +32,13 @@ class _RiveoCardState extends State<RiveoCard> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: 400.ms);
+    _controller = AnimationController(vsync: this, duration: 250.ms);
     _controller.addListener(() => setState(() {}));
-    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeOutBack);
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.ease,
+      reverseCurve: Curves.easeOutBack,
+    );
   }
 
   @override
@@ -96,8 +100,12 @@ class _RiveoCardState extends State<RiveoCard> with SingleTickerProviderStateMix
                   padding: widget.padding,
                   child: GestureDetector(
                     onVerticalDragDown: (details) => _controller.stop(),
-                    onVerticalDragUpdate: (details) =>
-                        _controller.value = min(_controller.value + -details.delta.dy / (constraints.maxHeight - widget.padding.vertical), 1.2),
+                    onVerticalDragUpdate: (details) {
+                      _controller.value = min(
+                        _controller.value + -details.delta.dy / (constraints.maxHeight - widget.padding.vertical),
+                        1.2,
+                      );
+                    },
                     onVerticalDragEnd: (details) {
                       final primaryVelocity = details.primaryVelocity ?? 0;
                       if (primaryVelocity < -400) {
