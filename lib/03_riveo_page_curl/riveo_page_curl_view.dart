@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:clone_war/03_riveo_page_curl/riveo_card.dart';
@@ -61,13 +62,14 @@ class _RiveoPageCurlViewState extends State<RiveoPageCurlView> {
           Positioned.fill(
             child: AnimatedContainer(
               duration: 500.ms,
-              curve: Curves.easeInOutCubicEmphasized,
+              curve: Curves.ease,
               decoration: BoxDecoration(
                 color: pageData.color,
               ),
             ),
           ),
           SafeArea(
+            bottom: false,
             child: Column(
               children: [
                 Column(
@@ -110,7 +112,7 @@ class _RiveoPageCurlViewState extends State<RiveoPageCurlView> {
                                   .textTheme
                                   .labelSmall!
                                   .copyWith(
-                                fontSize: fontSize + 20 * bendValue,
+                                fontSize: fontSize + 15 * bendValue,
                                 height: 0.8 + 0.2 * bendValue,
                                 color: Color.lerp(pageData.color, Colors.white, 0.6 + 0.4 * bendValue),
                                 fontVariations: [
@@ -145,7 +147,72 @@ class _RiveoPageCurlViewState extends State<RiveoPageCurlView> {
                                     default:
                                   }
                                 },
-                                hiddenChild: ColoredBox(color: pageData.color),
+                                hiddenChild: Opacity(
+                                  opacity: bendValue < 0.3 ? 0.0 : (bendValue - 0.3) / 0.7,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.all(20),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Transform.translate(
+                                              offset: const Offset(0.0, 30) + const Offset(-20.0, -70) * bendValue,
+                                              child: Transform.rotate(
+                                                angle: -pi / 6,
+                                                child: SizedBox(
+                                                  height: 70,
+                                                  child: Image.asset(Challenge3Images.googleEyes),
+                                                ),
+                                              ),
+                                            ),
+                                            Transform.translate(
+                                              offset: const Offset(0.0, -70) * bendValue,
+                                              child: SizedBox(
+                                                height: 80,
+                                                child: Image.asset(Challenge3Images.googleEyes),
+                                              ),
+                                            ),
+                                            Transform.translate(
+                                              offset: const Offset(0.0, 30) + const Offset(20.0, -70) * bendValue,
+                                              child: Transform.rotate(
+                                                angle: pi / 5.5,
+                                                child: SizedBox(
+                                                  height: 60,
+                                                  child: Image.asset(Challenge3Images.googleEyes),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 10,
+                                        ),
+                                        child: Transform.translate(
+                                          offset: Offset(0.0, -50 * bendValue),
+                                          child: ElevatedButton(
+                                            onPressed: () {
+                                              print('See more');
+                                            },
+                                            child: Center(
+                                              child: Text(
+                                                'See more',
+                                                style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                                                      color: Theme.of(context).colorScheme.onBackground,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                                 child: _buildSplashImage(pageData.image),
                               ),
                             ),

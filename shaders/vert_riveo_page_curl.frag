@@ -5,8 +5,7 @@
 precision highp float;
 
 layout(location = 0) out vec4 fragColor;
-
-uniform sampler2D image;
+layout(location = 0) uniform sampler2D image;
 
 uniform vec2 resolution;
 uniform vec4 container;
@@ -74,7 +73,7 @@ void main() {
 
     if(inRect(p1)) {
       fragColor = texture(image, p1 / resolution.xy);
-      fragColor.rgb *= pow(clamp((cylinderRadius - distance) / cylinderRadius, 0.0, 1.0), 0.1);
+      fragColor.rgb *= pow(clamp((cylinderRadius - distance) / cylinderRadius, 0.0, 1.0), 0.2);
       return;
     }
 

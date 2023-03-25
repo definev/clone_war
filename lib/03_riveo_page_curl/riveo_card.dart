@@ -10,7 +10,7 @@ class RiveoCard extends StatefulWidget {
     required this.hiddenChild,
     required this.child,
     this.radius = 30,
-    this.padding = const EdgeInsets.fromLTRB(7, 70, 7, 12),
+    this.padding = const EdgeInsets.fromLTRB(15, 70, 15, 20),
     required this.onHorizontalSwipe,
     required this.onVerticalDrag,
   });
@@ -49,93 +49,99 @@ class _RiveoCardState extends State<RiveoCard> with SingleTickerProviderStateMix
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return Stack(
-          children: [
-            Positioned.fill(
-              child: Padding(
-                padding: widget.padding,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(widget.radius),
-                  child: widget.hiddenChild,
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: ShaderBuilder(
-                assetKey: 'shaders/vert_riveo_page_curl.frag',
-                (context, shader, child) {
-                  return AnimatedSampler(
-                    (image, size, canvas) {
-                      final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
-                      final rect = getRect(
-                        image.width.toDouble() / devicePixelRatio,
-                        image.height.toDouble() / devicePixelRatio,
-                      );
-
-                      shader
-                        ..setImageSampler(0, image)
-                        // Size
-                        ..setFloat(0, image.width.toDouble() / devicePixelRatio)
-                        ..setFloat(1, image.height.toDouble() / devicePixelRatio)
-                        // Container
-                        ..setFloat(2, rect.left)
-                        ..setFloat(3, rect.top)
-                        ..setFloat(4, rect.right)
-                        ..setFloat(5, rect.bottom)
-                        // Progress
-                        ..setFloat(6, _animation.value)
-                        // Radius
-                        ..setFloat(7, max(widget.radius, 0))
-                        // Cylinder radius
-                        ..setFloat(8, rect.height / pi - 10);
-
-                      canvas
-                        ..save()
-                        ..drawRect(
-                          Offset.zero & size,
-                          Paint()..shader = shader,
-                        )
-                        ..restore();
-                    },
-                    child: child!,
-                  );
-                },
+        return GestureDetector(
+          onVerticalDragDown: (details) => _controller.stop(),
+          onVerticalDragUpdate: (details) {
+            _controller.value = min(
+              _controller.value + -details.delta.dy / (constraints.maxHeight - widget.padding.vertical),
+              1.2,
+            );
+          },
+          onVerticalDragEnd: (details) {
+            final primaryVelocity = details.primaryVelocity ?? 0;
+            if (primaryVelocity < -400) {
+              _controller.forward();
+            } else if (primaryVelocity > 400) {
+              _controller.reverse();
+            } else if (_controller.value > 0.5) {
+              _controller.forward();
+            } else {
+              _controller.reverse();
+            }
+          },
+          onHorizontalDragEnd: (details) {
+            final primaryVelocity = details.primaryVelocity ?? 0;
+            if (primaryVelocity > 400) {
+              widget.onHorizontalSwipe(AxisDirection.left);
+            } else if (primaryVelocity < -400) {
+              widget.onHorizontalSwipe(AxisDirection.right);
+            }
+          },
+          child: Stack(
+            children: [
+              Positioned.fill(
                 child: Padding(
                   padding: widget.padding,
-                  child: GestureDetector(
-                    onVerticalDragDown: (details) => _controller.stop(),
-                    onVerticalDragUpdate: (details) {
-                      _controller.value = min(
-                        _controller.value + -details.delta.dy / (constraints.maxHeight - widget.padding.vertical),
-                        1.2,
-                      );
-                    },
-                    onVerticalDragEnd: (details) {
-                      final primaryVelocity = details.primaryVelocity ?? 0;
-                      if (primaryVelocity < -400) {
-                        _controller.forward();
-                      } else if (primaryVelocity > 400) {
-                        _controller.reverse();
-                      } else if (_controller.value > 0.5) {
-                        _controller.forward();
-                      } else {
-                        _controller.reverse();
-                      }
-                    },
-                    onHorizontalDragEnd: (details) {
-                      final primaryVelocity = details.primaryVelocity ?? 0;
-                      if (primaryVelocity > 400) {
-                        widget.onHorizontalSwipe(AxisDirection.right);
-                      } else if (primaryVelocity < -400) {
-                        widget.onHorizontalSwipe(AxisDirection.left);
-                      }
-                    },
-                    child: widget.child,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(widget.radius),
+                    child: ColoredBox(
+                      color: Colors.transparent,
+                      child: widget.hiddenChild,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: ShaderBuilder(
+                    assetKey: 'shaders/vert_riveo_page_curl.frag',
+                    (context, shader, child) {
+                      return AnimatedSampler(
+                        (image, size, canvas) {
+                          final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
+                          final rect = getRect(
+                            image.width.toDouble() / devicePixelRatio,
+                            image.height.toDouble() / devicePixelRatio,
+                          );
+
+                          shader
+                            ..setImageSampler(0, image)
+                            // Size
+                            ..setFloat(0, image.width.toDouble() / devicePixelRatio)
+                            ..setFloat(1, image.height.toDouble() / devicePixelRatio)
+                            // Container
+                            ..setFloat(2, rect.left)
+                            ..setFloat(3, rect.top)
+                            ..setFloat(4, rect.right)
+                            ..setFloat(5, rect.bottom)
+                            // Progress
+                            ..setFloat(6, _animation.value)
+                            // Radius
+                            ..setFloat(7, max(widget.radius, 0))
+                            // Cylinder radius
+                            ..setFloat(8, rect.height / pi * 1.05);
+
+                          canvas
+                            ..save()
+                            ..drawRect(
+                              Offset.zero & size,
+                              Paint()..shader = shader,
+                            )
+                            ..restore();
+                        },
+                        child: child!,
+                      );
+                    },
+                    child: Padding(
+                      padding: widget.padding,
+                      child: widget.child,
+                    ),
+                  ),
+                ),
+              ),
+    
+            ],
+          ),
         );
       },
     );
