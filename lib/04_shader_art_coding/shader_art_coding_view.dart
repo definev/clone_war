@@ -29,7 +29,7 @@ class _ShaderPlaygroundState extends State<_ShaderPlayground> {
     super.initState();
     timer = Timer.periodic(
       1.6.ms,
-      (timer) => setState(() => iTime += 0.15),
+      (timer) => setState(() => iTime += 0.016),
     );
   }
 

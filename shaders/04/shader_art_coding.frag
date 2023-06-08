@@ -17,7 +17,6 @@ vec3 pallete(float t) {
 }
 
 void main() {
-    float time = iTime * 0.003;
     vec2 uv = FlutterFragCoord().xy / iResolution * 2.0 - 1.0;
 
     if(iResolution.x > iResolution.y) {
@@ -35,9 +34,9 @@ void main() {
 
         float d = length(uv) * exp(-length(uv0));
 
-        vec3 col = pallete(length(uv0) - i * .1 + time);
+        vec3 col = pallete(length(uv0) - i * .1 + iTime);
 
-        d = sin(d * 8. + time) / 8.;
+        d = sin(d * 8. + iTime) / 8.;
         d = abs(d);
         d = pow(0.01 / d, 1.2);
 
