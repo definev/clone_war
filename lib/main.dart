@@ -17,9 +17,7 @@ class CloneWar extends StatelessWidget {
         scheme: FlexScheme.aquaBlue,
         useMaterial3: true,
       ).toTheme,
-      routeInformationProvider: AppRouter.router.routeInformationProvider,
-      routeInformationParser: AppRouter.router.routeInformationParser,
-      routerDelegate: AppRouter.router.routerDelegate,
+      routerConfig: AppRouter.router,
     );
   }
 }

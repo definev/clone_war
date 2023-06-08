@@ -94,7 +94,7 @@ class _RiveoCardState extends State<RiveoCard> with SingleTickerProviderStateMix
               Positioned.fill(
                 child: IgnorePointer(
                   child: ShaderBuilder(
-                    assetKey: 'shaders/vert_riveo_page_curl.frag',
+                    assetKey: 'shaders/03/vert_riveo_page_curl.frag',
                     (context, shader, child) {
                       return AnimatedSampler(
                         (image, size, canvas) {

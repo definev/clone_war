@@ -1,7 +1,8 @@
 import 'package:clone_war/01_grid_layout/grid_zoom.dart';
-import 'package:clone_war/02_bubble_sheet/bubble_sheet.dart';
+import 'package:clone_war/02_bubble_sheet/bubble_sheet_view.dart';
 import 'package:clone_war/03_riveo_page_curl/riveo_page_curl_view.dart';
-import 'package:flex_color_scheme/flex_color_scheme.dart';
+import 'package:clone_war/04_shader_art_coding/shader_art_coding_view.dart';
+import 'package:clone_war/utils/extensions.dart';
 import 'package:flutter/material.dart';
 
 const challengeData = [
@@ -19,6 +20,11 @@ const challengeData = [
     '3',
     'Riveo page curl challenge',
     'An animation simulating the turning of a physical page, adding depth and interactivity to digital content.',
+  ),
+  ChallengeData(
+    '4',
+    'Shader art coding tutorial',
+    'Shader art coding tutorial is a tutorial on how to create a shader art coding effect.',
   ),
 ];
 
@@ -41,99 +47,15 @@ class ChallengePage extends StatelessWidget {
       case '1':
         return const GridLayoutChallenge();
       case '2':
-        return SafeArea(
-          child: MediaQuery.removePadding(
-            context: context,
-            removeTop: true,
-            child: BubbleSheet(
-              bottomSheet: Theme(
-                data: FlexColorScheme.light(
-                  scheme: FlexScheme.aquaBlue,
-                  useMaterial3: true,
-                ).toTheme,
-                child: const ExamplePage(),
-              ),
-              backgroundColor: FlexColorScheme.light(
-                scheme: FlexScheme.aquaBlue,
-                useMaterial3: true,
-              ).toTheme.primaryColor,
-              child: const ExamplePage(),
-            ),
-          ),
-        );
+        return const BubbleSheetView();
       case '3':
-        return Theme(
-          data: FlexColorScheme.light(
-            useMaterial3: true,
-            fontFamily: 'Unique',
-          ).toTheme,
-          child: const RiveoPageCurlView(),
-        );
+        return const RiveoPageCurlView() //
+            .useMaterial3
+            .setFontFamily('Unique');
+      case '4':
+        return const ShaderArtCodingView();
       default:
         return const Center(child: Text('Unknown challenge'));
     }
-  }
-}
-
-class ExamplePage extends StatelessWidget {
-  const ExamplePage({
-    Key? key,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home Page'),
-        centerTitle: true,
-        leading: const SizedBox(),
-      ),
-      body: CustomScrollView(
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.all(8),
-            sliver: SliverGrid.count(
-              crossAxisCount: 2,
-              children: const [
-                Card(child: FlutterLogo()),
-                Card(child: FlutterLogo()),
-                Card(child: FlutterLogo()),
-                Card(child: FlutterLogo()),
-              ],
-            ),
-          ),
-          SliverList(
-            delegate: SliverChildListDelegate(
-              [
-                ListTile(
-                  onTap: () {},
-                  leading: const Icon(Icons.leaderboard),
-                  title: const Text('Leaderboard'),
-                  subtitle: const Text('View the leaderboard'),
-                ),
-                ListTile(
-                  onTap: () {},
-                  leading: const Icon(Icons.settings),
-                  title: const Text('Settings'),
-                  subtitle: const Text('View the settings'),
-                ),
-                ListTile(
-                  onTap: () {},
-                  leading: const Icon(Icons.info),
-                  title: const Text('About'),
-                  subtitle: const Text('View the about page'),
-                ),
-                ListTile(
-                  onTap: () {},
-                  leading: const Icon(Icons.exit_to_app),
-                  title: const Text('Logout'),
-                  subtitle: const Text('Logout of the application'),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

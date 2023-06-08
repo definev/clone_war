@@ -70,8 +70,9 @@ flutter:
     - assets/challenge3/
 
   shaders:
-    - shaders/riveo_page_curl.frag
-    - shaders/vert_riveo_page_curl.frag
+    - shaders/03/riveo_page_curl.frag
+    - shaders/03/vert_riveo_page_curl.frag
+    - shaders/04/shader_art_coding.frag
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
