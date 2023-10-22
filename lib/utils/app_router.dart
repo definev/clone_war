@@ -12,7 +12,7 @@ class AppRouter {
       ),
       GoRoute(
         path: '/challenge/:id',
-        builder: (context, state) => ChallengePage(state.params['id']!),
+        builder: (context, state) => ChallengePage(state.pathParameters['id']!),
       ),
     ],
   );

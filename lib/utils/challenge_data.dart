@@ -2,6 +2,7 @@ import 'package:clone_war/01_grid_layout/grid_zoom.dart';
 import 'package:clone_war/02_bubble_sheet/bubble_sheet_view.dart';
 import 'package:clone_war/03_riveo_page_curl/riveo_page_curl_view.dart';
 import 'package:clone_war/04_shader_art_coding/shader_art_coding_view.dart';
+import 'package:clone_war/05_spring_card/spring_card_view.dart';
 import 'package:clone_war/utils/extensions.dart';
 import 'package:flutter/material.dart';
 
@@ -25,6 +26,11 @@ const challengeData = [
     '4',
     'Shader art coding tutorial',
     'Shader art coding tutorial is a tutorial on how to create a shader art coding effect.',
+  ),
+  ChallengeData(
+    '5',
+    'Spring card challenge',
+    'Spring card challenge introduce an ergonomic way to interact with a card.',
   ),
 ];
 
@@ -54,6 +60,8 @@ class ChallengePage extends StatelessWidget {
             .setFontFamily('Unique');
       case '4':
         return const ShaderArtCodingView();
+      case '5':
+        return const SpringCardView();
       default:
         return const Center(child: Text('Unknown challenge'));
     }

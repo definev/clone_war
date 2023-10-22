@@ -7,14 +7,14 @@ void main() {
 }
 
 class CloneWar extends StatelessWidget {
-  const CloneWar({Key? key}) : super(key: key);
+  const CloneWar({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'Clone War',
-      theme: FlexColorScheme.dark(
-        scheme: FlexScheme.aquaBlue,
+      theme: FlexColorScheme.light(
+        scheme: FlexScheme.amber,
         useMaterial3: true,
       ).toTheme,
       routerConfig: AppRouter.router,
