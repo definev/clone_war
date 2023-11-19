@@ -11,7 +11,7 @@ extension TextThemeX on TextTheme {
 extension ThemeX on Widget {
   Widget get useMaterial3 => Builder(
         builder: (context) => Theme(
-          data: context.theme.copyWith(useMaterial3: true),
+          data: context.theme,
           child: this,
         ),
       );
